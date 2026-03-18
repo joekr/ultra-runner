@@ -2,6 +2,8 @@ import { Button } from "./Button";
 
 interface EventChoice {
   label: string;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 interface EventModalProps {
@@ -22,12 +24,14 @@ export function EventModal({ event, onChoice }: EventModalProps) {
         {event.choices && event.choices.length > 0 ? (
           <div class="modal-content__choices">
             {event.choices.map((choice, i) => (
-              <Button
-                key={i}
-                label={choice.label}
-                onClick={() => onChoice(i)}
-                variant={i === 0 ? "primary" : "secondary"}
-              />
+              <div key={i}>
+                <Button
+                  label={choice.disabled ? `${choice.label} ${choice.disabledReason ?? "(no items)"}` : choice.label}
+                  onClick={() => onChoice(i)}
+                  variant={i === 0 ? "primary" : "secondary"}
+                  disabled={choice.disabled}
+                />
+              </div>
             ))}
           </div>
         ) : (

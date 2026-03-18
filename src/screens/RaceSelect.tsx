@@ -24,19 +24,25 @@ const TIER_TO_DISTANCE: Record<number, string> = {
   2: "10k",
   3: "half_marathon",
   4: "marathon",
+  5: "50k",
+  6: "50_mile",
+  7: "100k",
+  8: "100_mile",
+  9: "200_mile",
+  10: "barkley",
 };
 
 // All distance tiers including future locked ones
 const ALL_DISTANCE_TIERS = [
   { key: "5k", label: "5K", unlockLevel: 1 },
   { key: "10k", label: "10K", unlockLevel: 3 },
-  { key: "half_marathon", label: "Half Marathon", unlockLevel: 7 },
-  { key: "marathon", label: "Marathon", unlockLevel: 12 },
-  { key: "50k", label: "50K", unlockLevel: 18 },
-  { key: "50_mile", label: "50 Mile", unlockLevel: 25 },
-  { key: "100k", label: "100K", unlockLevel: 30 },
-  { key: "100_mile", label: "100 Mile", unlockLevel: 38 },
-  { key: "200_mile", label: "200+ Mile", unlockLevel: 44 },
+  { key: "half_marathon", label: "Half Marathon", unlockLevel: 5 },
+  { key: "marathon", label: "Marathon", unlockLevel: 8 },
+  { key: "50k", label: "50K", unlockLevel: 12 },
+  { key: "50_mile", label: "50 Mile", unlockLevel: 18 },
+  { key: "100k", label: "100K", unlockLevel: 24 },
+  { key: "100_mile", label: "100 Mile", unlockLevel: 32 },
+  { key: "200_mile", label: "200+ Mile", unlockLevel: 42 },
   { key: "barkley", label: "Barkley Marathons", unlockLevel: 50 },
 ];
 

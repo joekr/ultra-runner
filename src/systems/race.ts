@@ -1,6 +1,6 @@
 // systems/race.ts — Race simulation: segment-based state machine
 
-import type { ActiveRace, SegmentResult, StatsState } from "../types";
+import type { ActiveRace, RaceDebuff, SegmentResult, StatsState } from "../types";
 import { xpToStat } from "../state/gameState";
 import { createRaceRng, mulberry32, hashString } from "../engine/prng";
 import racesData from "../data/races.json";
@@ -38,6 +38,39 @@ export interface RaceDefinition {
   segmentDefinitions: Array<{ terrain: string; hasAidStation: boolean }>;
 }
 
+export interface EventChoiceDebuff {
+  id: string;
+  name: string;
+  effect: string;
+  segmentsRemaining: number;
+  fatiguePenalty: number;
+  speedPenalty: number;
+  moraleDrain: number;
+}
+
+export interface RaceEventChoice {
+  label: string;
+  effect: Record<string, number>;
+  outcome: string;
+  debuff?: EventChoiceDebuff;
+  escalates?: {
+    existingDebuffId: string;
+    debuff: EventChoiceDebuff;
+  };
+  conditionalDebuff?: {
+    condition: string; // "morale_below_30"
+    debuff: EventChoiceDebuff;
+  };
+  lowStatEscalation?: {
+    stat: string;
+    threshold: number;
+    override: { segmentsRemaining: number };
+  };
+  requiresConsumable?: string; // fuelCategory
+  causesDNF?: boolean;
+  dnfReason?: string;
+}
+
 export interface RaceEvent {
   id: string;
   name: string;
@@ -51,11 +84,8 @@ export interface RaceEvent {
   statCheck?: string | null;
   gearCheck?: string;
   effect: Record<string, number> | null;
-  choices: Array<{
-    label: string;
-    effect: Record<string, number>;
-    outcome: string;
-  }> | null;
+  choices: RaceEventChoice[] | null;
+  autoDebuff?: EventChoiceDebuff;
 }
 
 export interface RaceResult {
@@ -123,6 +153,7 @@ export function initializeRace(
     pacePerSegment: [],
     segmentResults: [],
     rngSeed: seed,
+    raceDebuffs: [],
   };
 }
 
@@ -270,30 +301,150 @@ export function rollEvents(
 
 /**
  * Apply a choice from a race event to the race state.
+ * Returns updated race, outcome text, any new debuffs, and optional DNF reason.
  */
 export function resolveEventChoice(
   event: RaceEvent,
   choiceIndex: number,
   race: ActiveRace,
-): { race: ActiveRace; outcomeText: string } {
-  const updated = { ...race };
+  stats?: StatsState,
+): { race: ActiveRace; outcomeText: string; newDebuffs: RaceDebuff[]; dnfReason?: string } {
+  const updated = { ...race, raceDebuffs: [...(race.raceDebuffs ?? [])] };
+  const newDebuffs: RaceDebuff[] = [];
 
-  // If the event has no choices, apply the event's direct effect
+  // If the event has no choices, apply the event's direct effect + autoDebuff
   if (!event.choices || event.choices.length === 0) {
     if (event.effect) {
       applyEffects(updated, event.effect);
     }
-    return { race: updated, outcomeText: event.description };
+    if (event.autoDebuff) {
+      const debuff: RaceDebuff = { ...event.autoDebuff };
+      updated.raceDebuffs.push(debuff);
+      newDebuffs.push(debuff);
+    }
+    return { race: updated, outcomeText: event.description, newDebuffs };
   }
 
   const choice = event.choices[choiceIndex];
   if (!choice) {
-    return { race: updated, outcomeText: "Invalid choice." };
+    return { race: updated, outcomeText: "Invalid choice.", newDebuffs };
+  }
+
+  // Handle DNF choice
+  if (choice.causesDNF) {
+    return { race: updated, outcomeText: choice.outcome, newDebuffs, dnfReason: choice.dnfReason ?? "Dropped out" };
   }
 
   applyEffects(updated, choice.effect);
 
-  return { race: updated, outcomeText: choice.outcome };
+  // Handle escalating debuff (e.g., second blister becomes severe)
+  if (choice.escalates) {
+    const existingIdx = updated.raceDebuffs.findIndex(
+      (d) => d.id === choice.escalates!.existingDebuffId
+    );
+    if (existingIdx >= 0) {
+      // Remove old debuff and apply escalated version
+      updated.raceDebuffs.splice(existingIdx, 1);
+      const escalated: RaceDebuff = { ...choice.escalates.debuff };
+      updated.raceDebuffs.push(escalated);
+      newDebuffs.push(escalated);
+    } else if (choice.debuff) {
+      // No existing debuff to escalate — apply normal debuff
+      const debuff: RaceDebuff = { ...choice.debuff };
+      updated.raceDebuffs.push(debuff);
+      newDebuffs.push(debuff);
+    }
+  } else if (choice.debuff) {
+    // Standard debuff application
+    let debuff: RaceDebuff = { ...choice.debuff };
+
+    // Check low stat escalation
+    if (choice.lowStatEscalation && stats) {
+      const statKey = choice.lowStatEscalation.stat as keyof StatsState;
+      const statEntry = stats[statKey];
+      if (statEntry) {
+        const statVal = xpToStat(statEntry.trainingXp);
+        if (statVal < choice.lowStatEscalation.threshold) {
+          debuff = { ...debuff, ...choice.lowStatEscalation.override };
+        }
+      }
+    }
+
+    updated.raceDebuffs.push(debuff);
+    newDebuffs.push(debuff);
+  }
+
+  // Handle conditional debuff (e.g., "dig deep" bonk if morale low)
+  if (choice.conditionalDebuff) {
+    let conditionMet = false;
+    if (choice.conditionalDebuff.condition === "morale_below_30") {
+      conditionMet = updated.morale < 30;
+    }
+    if (conditionMet) {
+      const debuff: RaceDebuff = { ...choice.conditionalDebuff.debuff };
+      updated.raceDebuffs.push(debuff);
+      newDebuffs.push(debuff);
+    }
+  }
+
+  return { race: updated, outcomeText: choice.outcome, newDebuffs };
+}
+
+/**
+ * Check if a choice requires a consumable the player has.
+ */
+export function choiceRequiresConsumable(
+  choice: RaceEventChoice,
+): string | null {
+  return choice.requiresConsumable ?? null;
+}
+
+/**
+ * Check if the player has a consumable of a given fuelCategory.
+ * Returns the templateId if found, null otherwise.
+ */
+export function findConsumableByCategory(
+  consumables: Record<string, number>,
+  fuelCategory: string,
+  getTemplate: (id: string) => { fuelCategory: string } | undefined,
+): string | null {
+  for (const [id, qty] of Object.entries(consumables)) {
+    if (qty <= 0) continue;
+    const tmpl = getTemplate(id);
+    if (tmpl && tmpl.fuelCategory === fuelCategory) return id;
+  }
+  return null;
+}
+
+/**
+ * Apply debuff effects during a segment and return updated state.
+ * Decrements segmentsRemaining and removes expired debuffs.
+ */
+export function applyDebuffsToSegment(
+  race: ActiveRace,
+): { race: ActiveRace; speedMultiplier: number; warning: string | null } {
+  const updated = { ...race, raceDebuffs: [...(race.raceDebuffs ?? [])] };
+  let speedMultiplier = 1.0;
+  let totalFatiguePenalty = 0;
+  let totalMoraleDrain = 0;
+
+  for (const debuff of updated.raceDebuffs) {
+    speedMultiplier *= debuff.speedPenalty;
+    totalFatiguePenalty += debuff.fatiguePenalty;
+    totalMoraleDrain += debuff.moraleDrain;
+  }
+
+  updated.fatigue = clamp(updated.fatigue + totalFatiguePenalty, 0, 100);
+  updated.morale = clamp(updated.morale - totalMoraleDrain, 0, 100);
+
+  // Decrement and remove expired debuffs
+  updated.raceDebuffs = updated.raceDebuffs
+    .map((d) => d.segmentsRemaining === -1 ? d : { ...d, segmentsRemaining: d.segmentsRemaining - 1 })
+    .filter((d) => d.segmentsRemaining === -1 || d.segmentsRemaining > 0);
+
+  const warning = updated.raceDebuffs.length >= 3 ? "Your body is falling apart" : null;
+
+  return { race: updated, speedMultiplier, warning };
 }
 
 function applyEffects(

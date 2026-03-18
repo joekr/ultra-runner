@@ -1,5 +1,7 @@
+import { useState } from "preact/hooks";
 import { gameState, fitnessLevel, statValues } from "../state/gameState";
-import { startWorkout, takeRestDay, startRace, navigateTo, updateGameState, volunteerAtRace, getVolunteerPay, coachOthers, getCoachOthersPay, getSponsoredRunPayout } from "../state/actions";
+import { startWorkout, takeRestDay, startRace, navigateTo, updateGameState, volunteerAtRace, getVolunteerPay, coachOthers, getCoachOthersPay, getSponsoredRunPayout, trainFullWeek } from "../state/actions";
+import type { WeekTrainingResult } from "../state/actions";
 import { GaugeCircle } from "../components/GaugeCircle";
 import { StatBar } from "../components/StatBar";
 import { Button } from "../components/Button";
@@ -29,9 +31,82 @@ function formatTime(seconds: number): string {
   return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+const STAT_CONFIG = [
+  { key: "endurance", label: "Endurance", color: "var(--color-sage)" },
+  { key: "speed", label: "Speed", color: "#5dade2" },
+  { key: "strength", label: "Strength", color: "var(--color-terracotta)" },
+  { key: "mentalToughness", label: "Mental", color: "#d4a017" },
+  { key: "recovery", label: "Recovery", color: "#8e44ad" },
+  { key: "nutritionIQ", label: "Nutrition", color: "#27ae60" },
+];
+
+function StatsSection({ stats }: { stats: Record<string, number> }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div>
+      <div
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          cursor: "pointer",
+          marginBottom: expanded ? "var(--space-2)" : 0,
+        }}
+      >
+        <span class="screen__subheader" style={{ margin: 0 }}>Runner Stats</span>
+        {!expanded && (
+          <div style={{
+            display: "flex",
+            gap: "6px",
+            alignItems: "center",
+          }}>
+            {STAT_CONFIG.map(({ key, label, color }) => (
+              <div
+                key={key}
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  color,
+                  textAlign: "center",
+                  lineHeight: 1.1,
+                }}
+                title={`${label}: ${Math.round(stats[key] ?? 0)}`}
+              >
+                <div>{label}</div>
+                <div style={{ fontSize: "11px" }}>{Math.round(stats[key] ?? 0)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        <span style={{
+          fontSize: "var(--text-xs)",
+          color: "var(--color-text-muted)",
+          marginLeft: "var(--space-2)",
+        }}>
+          {expanded ? "\u25B2" : "\u25BC"}
+        </span>
+      </div>
+      {expanded && (
+        <div>
+          <StatBar label="Endurance" value={stats.endurance} color="var(--color-sage)" />
+          <StatBar label="Speed" value={stats.speed} color="#5dade2" />
+          <StatBar label="Strength" value={stats.strength} color="var(--color-terracotta)" />
+          <StatBar label="Mental" value={stats.mentalToughness} color="#d4a017" />
+          <StatBar label="Recovery" value={stats.recovery} color="#8e44ad" />
+          <StatBar label="Nutrition" value={stats.nutritionIQ} color="#27ae60" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Dashboard() {
   const state = gameState.value;
   if (!state) return null;
+
+  const [weekTrainingResult, setWeekTrainingResult] = useState<WeekTrainingResult | null>(null);
 
   const { runner, condition, calendar, inventory, history, injuries } = state;
   const todayPlan = calendar.trainingPlan[calendar.weekDay];
@@ -71,6 +146,12 @@ export function Dashboard() {
     save(gameState.value!);
   }
 
+  // VO2 max estimate: weighted from endurance (40%), speed (30%), strength (15%), recovery (15%)
+  // Scaled to real-world range: ~25 (untrained beginner) to ~85 (elite)
+  const vo2max = Math.round(
+    25 + ((stats.endurance * 0.4 + stats.speed * 0.3 + stats.strength * 0.15 + stats.recovery * 0.15) / 100) * 60
+  );
+
   const nextRace = calendar.scheduledRaces.length > 0
     ? calendar.scheduledRaces.reduce((a, b) =>
         a.gameDay <= b.gameDay ? a : b
@@ -86,6 +167,82 @@ export function Dashboard() {
 
   const recentRaces = history.completedRaces.slice(-3).reverse();
 
+  // Week training results modal
+  if (weekTrainingResult) {
+    const r = weekTrainingResult;
+    return (
+      <div class="screen" style={{ padding: "var(--space-6)" }}>
+        <h2 style={{ textAlign: "center", marginBottom: "var(--space-4)" }}>
+          Week Training Complete
+        </h2>
+
+        <div class="card" style={{ marginBottom: "var(--space-3)", textAlign: "center" }}>
+          <div style={{ fontSize: "var(--text-4xl)", fontWeight: 800, color: "var(--color-terracotta)" }}>
+            {r.daysCompleted}
+          </div>
+          <div style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+            days trained
+          </div>
+        </div>
+
+        {r.stoppedEarly && r.stopReason && (
+          <div class="card" style={{ borderLeft: "3px solid #d4a017", marginBottom: "var(--space-3)" }}>
+            <div style={{ fontSize: "var(--text-sm)", color: "#d4a017" }}>
+              Stopped early: {r.stopReason}
+            </div>
+          </div>
+        )}
+
+        {r.injuries.length > 0 && (
+          <div class="card" style={{ borderLeft: "3px solid var(--color-terracotta)", marginBottom: "var(--space-3)" }}>
+            <div style={{ fontSize: "var(--text-sm)", color: "var(--color-terracotta)" }}>
+              Injuries: {r.injuries.join(", ")}
+            </div>
+          </div>
+        )}
+
+        <div class="card" style={{ marginBottom: "var(--space-3)" }}>
+          <div style={{ fontWeight: 700, marginBottom: "var(--space-2)" }}>Stat Gains</div>
+          {Object.entries(r.totalStatGains).map(([stat, xp]) => (
+            <div key={stat} style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-sm)", padding: "2px 0" }}>
+              <span>{stat}</span>
+              <span style={{ fontWeight: 600, color: "var(--color-sage)" }}>+{(xp as number).toFixed(1)} XP</span>
+            </div>
+          ))}
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-sm)", padding: "var(--space-1) 0", borderTop: "1px solid var(--color-warm-gray-200)", marginTop: "var(--space-1)" }}>
+            <span>Runner XP</span>
+            <span style={{ fontWeight: 600 }}>+{r.totalXpEarned}</span>
+          </div>
+        </div>
+
+        {r.leveledUp && (
+          <div class="card" style={{ border: "2px solid #d4a017", marginBottom: "var(--space-3)", textAlign: "center" }}>
+            <div style={{ fontSize: "var(--text-lg)", fontWeight: 700, color: "#d4a017" }}>
+              Level Up! Now Level {r.newLevel}
+            </div>
+            {r.newUnlocks.length > 0 && (
+              <div style={{ color: "var(--color-sage)", marginTop: "var(--space-1)" }}>
+                {r.newUnlocks.map((d) => (
+                  <div key={d}>{d.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())} races unlocked!</div>
+                ))}
+              </div>
+            )}
+            {r.levelPerks.length > 0 && (
+              <div style={{ marginTop: "var(--space-2)", textAlign: "left", background: "rgba(122,139,111,0.1)", borderRadius: "var(--radius-md, 8px)", padding: "var(--space-2) var(--space-3)" }}>
+                <div style={{ fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--color-sage)", textTransform: "uppercase", marginBottom: "var(--space-1)" }}>Stats Improved</div>
+                {r.levelPerks.map((perk, i) => (
+                  <div key={i} style={{ fontSize: "var(--text-sm)", padding: "2px 0" }}>{perk}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <Button label="Continue" onClick={() => setWeekTrainingResult(null)} />
+      </div>
+    );
+  }
+
   return (
     <div class="screen">
       <div class="dashboard__runner-info">
@@ -99,6 +256,11 @@ export function Dashboard() {
           value={fitness}
           label="Fitness"
           color="#5dade2"
+        />
+        <GaugeCircle
+          value={vo2max}
+          label="VO2 Max"
+          color="var(--color-terracotta)"
         />
         <GaugeCircle
           value={Math.round(condition.fatigue)}
@@ -132,13 +294,7 @@ export function Dashboard() {
           <EquippedLoadout />
         </div>
 
-        <div class="screen__subheader">Runner Stats</div>
-        <StatBar label="Endurance" value={stats.endurance} color="var(--color-sage)" />
-        <StatBar label="Speed" value={stats.speed} color="#5dade2" />
-        <StatBar label="Strength" value={stats.strength} color="var(--color-terracotta)" />
-        <StatBar label="Mental" value={stats.mentalToughness} color="#d4a017" />
-        <StatBar label="Recovery" value={stats.recovery} color="#8e44ad" />
-        <StatBar label="Nutrition" value={stats.nutritionIQ} color="#27ae60" />
+        <StatsSection stats={stats} />
       </div>
 
       {/* Injury alerts */}
@@ -336,11 +492,20 @@ export function Dashboard() {
                 {state.coach.xpMultiplier > 1 && ` | +${Math.round((state.coach.xpMultiplier - 1) * 100)}% XP`}
                 {" | "}-{Math.round(state.coach.fatigueReduction * 100)}% fatigue
               </div>
-              <Button
-                label="Manage"
-                onClick={() => navigateTo("coach")}
-                variant="secondary"
-              />
+              <div style={{ display: "flex", gap: "var(--space-2)" }}>
+                <Button
+                  label="Train Full Week"
+                  onClick={() => {
+                    const weekResult = trainFullWeek();
+                    setWeekTrainingResult(weekResult);
+                  }}
+                />
+                <Button
+                  label="Manage"
+                  onClick={() => navigateTo("coach")}
+                  variant="secondary"
+                />
+              </div>
             </>
           ) : (
             <>

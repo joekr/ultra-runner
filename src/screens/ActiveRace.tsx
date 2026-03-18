@@ -2,8 +2,9 @@ import { useState } from "preact/hooks";
 import { gameState } from "../state/gameState";
 import { updateGameState, navigateTo, completeRaceAction, dnfRaceAction } from "../state/actions";
 import type { RaceCompletionInfo, DNFCompletionInfo } from "../state/actions";
-import { resolveEventChoice } from "../systems/race";
-import type { RaceEvent } from "../systems/race";
+import { resolveEventChoice, applyDebuffsToSegment, findConsumableByCategory } from "../systems/race";
+import type { RaceEvent, RaceEventChoice } from "../systems/race";
+import type { RaceDebuff } from "../types";
 import { Button } from "../components/Button";
 import { ProgressBar } from "../components/ProgressBar";
 import { EventModal } from "../components/EventModal";
@@ -40,7 +41,8 @@ interface EventDef {
   statCheck?: string | null;
   gearCheck?: string;
   effect: Record<string, number> | null;
-  choices: Array<{ label: string; effect: Record<string, number>; outcome: string }> | null;
+  choices: RaceEventChoice[] | null;
+  autoDebuff?: RaceDebuff;
 }
 
 function formatRaceTime(seconds: number): string {
@@ -79,6 +81,8 @@ export function ActiveRace() {
   const [fuelMessage, setFuelMessage] = useState<string | null>(null);
   const [raceResult, setRaceResult] = useState<RaceCompletionInfo | null>(null);
   const [dnfResult, setDnfResult] = useState<DNFCompletionInfo | null>(null);
+  const [debuffWarning, setDebuffWarning] = useState<string | null>(null);
+  const [newDebuffFlash, setNewDebuffFlash] = useState<string | null>(null);
 
   if (!state || !activeRace) {
     // Check if we have a result to show (race just completed and state was updated)
@@ -163,24 +167,53 @@ export function ActiveRace() {
     const newSegment = activeRace.currentSegment + 1;
     const isComplete = newSegment >= activeRace.totalSegments;
 
+    // Apply debuffs to segment
+    const preDebuffRace = {
+      ...activeRace,
+      energy: newEnergy,
+      fatigue: newFatigue,
+      morale: newMorale,
+      raceDebuffs: activeRace.raceDebuffs ?? [],
+    };
+    const { race: postDebuffRace, speedMultiplier, warning } = applyDebuffsToSegment(preDebuffRace);
+
+    // Apply speed penalty from debuffs to segment time
+    const adjustedSegmentTime = Math.round(segmentTime * speedMultiplier);
+
+    if (warning) {
+      setDebuffWarning(warning);
+      setTimeout(() => setDebuffWarning(null), 3000);
+    }
+
     const segmentResult = {
       segment: activeRace.currentSegment,
-      time: segmentTime,
+      time: adjustedSegmentTime,
       events: [] as string[],
       statChanges: {},
     };
 
     const updatedRace = {
-      ...activeRace,
+      ...postDebuffRace,
       currentSegment: newSegment,
-      elapsedTime: activeRace.elapsedTime + segmentTime,
+      elapsedTime: activeRace.elapsedTime + adjustedSegmentTime,
       position: newPosition,
-      energy: newEnergy,
-      fatigue: newFatigue,
-      morale: newMorale,
       pacePerSegment: [...activeRace.pacePerSegment, pace],
       segmentResults: [...activeRace.segmentResults, segmentResult],
     };
+
+    // Auto-DNF checks
+    if (updatedRace.morale <= 0) {
+      updateGameState({ race: { active: updatedRace } });
+      const info = dnfRaceAction("Lost the will to continue");
+      if (info) setDnfResult(info);
+      return;
+    }
+    if (updatedRace.fatigue >= 100 && updatedRace.energy <= 0) {
+      updateGameState({ race: { active: updatedRace } });
+      const info = dnfRaceAction("Complete exhaustion");
+      if (info) setDnfResult(info);
+      return;
+    }
 
     updateGameState({
       race: { active: updatedRace },
@@ -197,15 +230,49 @@ export function ActiveRace() {
 
     // Check for random event (simplified)
     const eventRoll = Math.random();
-    if (eventRoll < 0.25) {
-      const validEvents = (eventsData as EventDef[]).filter(
-        (e) => e.choices && e.choices.length > 0,
-      );
-      if (validEvents.length > 0) {
-        const randomEvent =
-          validEvents[Math.floor(Math.random() * validEvents.length)];
-        setPendingEvent(randomEvent);
-        return;
+    if (eventRoll < 0.3) {
+      const currentState = gameState.value;
+      const currentRace = currentState?.race.active;
+      if (currentRace) {
+        const rDef = (racesData as RaceDefinition[]).find(r => r.id === currentRace.raceId);
+        const raceTier = (rDef as any)?.tier ?? 1;
+        const validEvents = (eventsData as EventDef[]).filter((e) => {
+          if (e.minTier > raceTier) return false;
+          if (e.minSegment !== undefined && e.minSegment > currentRace.currentSegment) return false;
+          return true;
+        });
+        if (validEvents.length > 0) {
+          const randomEvent = validEvents[Math.floor(Math.random() * validEvents.length)];
+
+          // Auto-apply events (no choices) get resolved immediately
+          if (!randomEvent.choices || randomEvent.choices.length === 0) {
+            const { race: autoRace, newDebuffs } = resolveEventChoice(
+              randomEvent as RaceEvent,
+              0,
+              currentRace,
+              currentState?.stats,
+            );
+            updateGameState({ race: { active: autoRace } });
+
+            if (newDebuffs.length > 0) {
+              setNewDebuffFlash(newDebuffs[0].name);
+              setTimeout(() => setNewDebuffFlash(null), 2000);
+            }
+
+            // Show the event description briefly
+            setOutcomeText(`${randomEvent.name}: ${randomEvent.description}`);
+            setTimeout(() => {
+              setOutcomeText(null);
+              setUsedCategoriesThisSegment(new Set());
+              setShowFuelPicker(true);
+            }, 2000);
+            return;
+          }
+
+          // Event with choices — show modal
+          setPendingEvent(randomEvent);
+          return;
+        }
       }
     }
 
@@ -270,28 +337,68 @@ export function ActiveRace() {
       return;
     }
 
+    const choice = pendingEvent.choices?.[index];
+
+    // Handle consumable requirement: deduct from inventory
+    if (choice?.requiresConsumable) {
+      const category = choice.requiresConsumable;
+      const templateId = findConsumableByCategory(
+        state.inventory.consumables,
+        category,
+        (id) => getConsumableTemplate(id),
+      );
+      if (templateId) {
+        const owned = state.inventory.consumables[templateId] ?? 0;
+        updateGameState({
+          inventory: {
+            ...state.inventory,
+            consumables: {
+              ...state.inventory.consumables,
+              [templateId]: owned - 1,
+            },
+          },
+        });
+      }
+    }
+
     // Wire up resolveEventChoice from race.ts
-    const { race: updatedRace, outcomeText: text } = resolveEventChoice(
+    const { race: updatedRace, outcomeText: text, newDebuffs, dnfReason } = resolveEventChoice(
       pendingEvent as RaceEvent,
       index,
       state.race.active,
+      state.stats,
     );
+
+    // Handle DNF from event choice (e.g. twisted ankle drop out)
+    if (dnfReason) {
+      updateGameState({ race: { active: updatedRace } });
+      const info = dnfRaceAction(dnfReason);
+      if (info) setDnfResult(info);
+      setPendingEvent(null);
+      return;
+    }
 
     // Apply the updated race state
     updateGameState({
       race: { active: updatedRace },
     });
 
+    // Flash new debuffs
+    if (newDebuffs.length > 0) {
+      setNewDebuffFlash(newDebuffs[0].name);
+      setTimeout(() => setNewDebuffFlash(null), 2000);
+    }
+
     // Show outcome text briefly
     setPendingEvent(null);
     setOutcomeText(text);
 
-    // Auto-dismiss outcome after 2 seconds, then check for aid station
+    // Auto-dismiss outcome after 2 seconds, then show fuel picker
     setTimeout(() => {
       setOutcomeText(null);
-      if (segDef?.hasAidStation) {
-        setShowAidStation(true);
-      }
+      // Reset fuel categories for the new segment and show fuel picker
+      setUsedCategoriesThisSegment(new Set());
+      setShowFuelPicker(true);
     }, 2000);
   }
 
@@ -595,6 +702,48 @@ export function ActiveRace() {
         />
       </div>
 
+      {/* Active Debuffs */}
+      {(activeRace.raceDebuffs ?? []).length > 0 && (
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "var(--space-1)",
+          justifyContent: "center",
+          marginBottom: "var(--space-3)",
+        }}>
+          {(activeRace.raceDebuffs ?? []).map((debuff, i) => (
+            <div
+              key={`${debuff.id}-${i}`}
+              style={{
+                background: debuff.speedPenalty < 1 ? "var(--color-sage)" : "#c0392b",
+                color: "#fff",
+                fontSize: "var(--text-xs)",
+                fontWeight: 600,
+                padding: "2px 8px",
+                borderRadius: "var(--radius-md, 8px)",
+                animation: newDebuffFlash === debuff.name ? "pulse 0.5s ease-in-out 3" : undefined,
+              }}
+            >
+              {debuff.name} ({debuff.segmentsRemaining === -1 ? "rest of race" : `${debuff.segmentsRemaining} seg`})
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Debuff Warning */}
+      {debuffWarning && (
+        <div style={{
+          textAlign: "center",
+          color: "#c0392b",
+          fontWeight: 700,
+          fontSize: "var(--text-sm)",
+          marginBottom: "var(--space-2)",
+          animation: "pulse 1s ease-in-out infinite",
+        }}>
+          {debuffWarning}
+        </div>
+      )}
+
       <div class="active-race__drop-out">
         <Button
           label="Drop Out (DNF)"
@@ -620,7 +769,21 @@ export function ActiveRace() {
           event={{
             name: pendingEvent.name,
             description: pendingEvent.description,
-            choices: pendingEvent.choices,
+            choices: pendingEvent.choices ? pendingEvent.choices.map((c) => {
+              if (c.requiresConsumable) {
+                const hasItem = state ? findConsumableByCategory(
+                  state.inventory.consumables,
+                  c.requiresConsumable,
+                  (id) => getConsumableTemplate(id),
+                ) !== null : false;
+                return {
+                  label: c.label,
+                  disabled: !hasItem,
+                  disabledReason: !hasItem ? "(no items)" : undefined,
+                };
+              }
+              return { label: c.label };
+            }) : null,
           }}
           onChoice={handleEventChoice}
         />

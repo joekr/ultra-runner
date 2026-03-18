@@ -17,8 +17,14 @@ export const XP_PER_PR: number = balance.progression.xpPerPR;
 export const DISTANCE_UNLOCKS: Record<number, string[]> = {
   1: ["5k"],
   3: ["10k"],
-  7: ["half_marathon"],
-  12: ["marathon"],
+  5: ["half_marathon"],
+  8: ["marathon"],
+  12: ["50k"],
+  18: ["50_mile"],
+  24: ["100k"],
+  32: ["100_mile"],
+  42: ["200_mile"],
+  50: ["barkley"],
 };
 
 // ── Level calculation ────────────────────────────────────────────────

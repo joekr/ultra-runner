@@ -20,6 +20,7 @@ import { mulberry32 } from "../engine/prng";
 import { checkAchievements, getAchievementById } from "../systems/achievements";
 import { pushAchievementNotifications } from "./achievementNotifications";
 import { dailyPassiveFatigueRecovery, restDayFatigueRecovery, describeLevelUp } from "../systems/stats";
+import { computeStatGains } from "../systems/training";
 
 // ── Navigation ────────────────────────────────────────────────────────
 
@@ -254,6 +255,150 @@ export function endWorkout(): WorkoutCompletionInfo | null {
     levelPerks: newLevel > state.runner.level ? describeLevelUp(state.runner.level, newLevel) : [],
     coachMessage,
   };
+}
+
+// ── Train Full Week (Coach Auto-Train) ────────────────────────────────
+
+export interface WeekTrainingResult {
+  daysCompleted: number;
+  totalXpEarned: number;
+  totalStatGains: Record<string, number>;
+  stoppedEarly: boolean;
+  stopReason: string | null;
+  leveledUp: boolean;
+  newLevel: number;
+  newUnlocks: string[];
+  levelPerks: string[];
+  injuries: string[]; // injury names that occurred
+}
+
+import workoutsData from "../data/workouts.json";
+
+export function trainFullWeek(): WeekTrainingResult {
+  const result: WeekTrainingResult = {
+    daysCompleted: 0,
+    totalXpEarned: 0,
+    totalStatGains: {},
+    stoppedEarly: false,
+    stopReason: null,
+    leveledUp: false,
+    newLevel: 1,
+    newUnlocks: [],
+    levelPerks: [],
+    injuries: [],
+  };
+
+  const startLevel = gameState.value?.runner.level ?? 1;
+
+  // Simulate up to 7 days (stopping at Saturday for races)
+  for (let day = 0; day < 7; day++) {
+    const state = gameState.value;
+    if (!state || !state.coach?.hired) {
+      result.stoppedEarly = true;
+      result.stopReason = "No coach hired.";
+      break;
+    }
+
+    // Stop if it's Saturday (race day)
+    if (state.calendar.weekDay === 5) {
+      result.stoppedEarly = true;
+      result.stopReason = "Saturday — time to race!";
+      break;
+    }
+
+    // Stop if fatigue too high
+    if (state.condition.fatigue >= 85) {
+      result.stoppedEarly = true;
+      result.stopReason = `Fatigue too high (${Math.round(state.condition.fatigue)}%). Rest recommended.`;
+      break;
+    }
+
+    // Stop if injured (minor or worse)
+    if (state.injuries.some((inj) => inj.severity !== "niggle")) {
+      result.stoppedEarly = true;
+      result.stopReason = `Injury needs recovery: ${state.injuries.find((i) => i.severity !== "niggle")?.type.replace(/_/g, " ")}`;
+      break;
+    }
+
+    const plannedWorkout = state.calendar.trainingPlan[state.calendar.weekDay].workout;
+
+    if (plannedWorkout === "rest") {
+      // Auto rest day
+      takeRestDay();
+      result.daysCompleted++;
+      continue;
+    }
+
+    // Simulate a coached workout
+    const workoutDef = (workoutsData as any[]).find((w: any) => w.id === plannedWorkout);
+    if (!workoutDef) {
+      takeRestDay();
+      result.daysCompleted++;
+      continue;
+    }
+
+    // Calculate stat gains as if coaching at sweet_spot for the full workout
+    const sweetSpot = { quality: "sweet_spot" as const, multiplier: 1.0, injuryRisk: 0.02 };
+    const totalTicks = Math.floor(workoutDef.durationMs / 100);
+    const dayGains: Record<string, number> = {};
+
+    for (let tick = 0; tick < totalTicks; tick++) {
+      const gains = computeStatGains(plannedWorkout, sweetSpot, state.condition.fatigue, 100);
+      // Apply coach XP multiplier
+      for (const [stat, val] of Object.entries(gains)) {
+        const boosted = val * (state.coach.xpMultiplier ?? 1.0);
+        dayGains[stat] = (dayGains[stat] ?? 0) + boosted;
+        result.totalStatGains[stat] = (result.totalStatGains[stat] ?? 0) + boosted;
+      }
+    }
+
+    // Create a fake completed workout and apply gains via endWorkout logic
+    const workout = createActiveWorkout(plannedWorkout);
+    workout.elapsed = workout.duration; // mark complete
+    workout.statGainsAccumulated = dayGains;
+    workout.sweetSpotHits = totalTicks;
+
+    // Set the workout then end it
+    gameState.value = {
+      ...state,
+      training: { ...state.training, currentWorkout: workout },
+    };
+
+    const endResult = endWorkout();
+    if (endResult) {
+      result.totalXpEarned += endResult.xpEarned;
+      if (endResult.leveledUp) {
+        result.leveledUp = true;
+        result.newLevel = endResult.newLevel;
+        result.newUnlocks.push(...endResult.newUnlocks);
+        result.levelPerks.push(...endResult.levelPerks);
+      }
+    }
+
+    // Check if an injury occurred
+    const postState = gameState.value;
+    if (postState) {
+      const newInjuries = postState.injuries.filter(
+        (inj) => !state.injuries.some((old) => old.id === inj.id),
+      );
+      if (newInjuries.length > 0) {
+        result.injuries.push(...newInjuries.map((i) => i.type.replace(/_/g, " ")));
+        if (newInjuries.some((i) => i.severity !== "niggle")) {
+          result.stoppedEarly = true;
+          result.stopReason = `Injury during training: ${newInjuries[0].type.replace(/_/g, " ")}`;
+          result.daysCompleted++;
+          break;
+        }
+      }
+    }
+
+    result.daysCompleted++;
+  }
+
+  result.newLevel = gameState.value?.runner.level ?? startLevel;
+  save(gameState.value!);
+
+  return result;
 }
 
 // ── Rest Day ──────────────────────────────────────────────────────────

@@ -45,27 +45,27 @@ describe("calculateLevel", () => {
   });
 
   it("returns level 1 for XP below first threshold", () => {
-    expect(calculateLevel(499)).toBe(1);
+    expect(calculateLevel(LEVEL_THRESHOLDS[1] - 1)).toBe(1);
   });
 
-  it("returns level 2 at exactly 500 XP", () => {
-    expect(calculateLevel(500)).toBe(2);
+  it("returns level 2 at exactly second threshold", () => {
+    expect(calculateLevel(LEVEL_THRESHOLDS[1])).toBe(2);
   });
 
-  it("returns level 3 at 1200 XP", () => {
-    expect(calculateLevel(1200)).toBe(3);
+  it("returns level 3 at third threshold", () => {
+    expect(calculateLevel(LEVEL_THRESHOLDS[2])).toBe(3);
   });
 
-  it("returns level 5 at 4500 XP", () => {
-    expect(calculateLevel(4500)).toBe(5);
+  it("returns level 5 at fifth threshold", () => {
+    expect(calculateLevel(LEVEL_THRESHOLDS[4])).toBe(5);
   });
 
   it("returns max level for very large XP", () => {
-    expect(calculateLevel(999999)).toBe(LEVEL_THRESHOLDS.length);
+    expect(calculateLevel(99999999)).toBe(LEVEL_THRESHOLDS.length);
   });
 
   it("returns correct level just below a threshold", () => {
-    expect(calculateLevel(1199)).toBe(2);
+    expect(calculateLevel(LEVEL_THRESHOLDS[2] - 1)).toBe(2);
   });
 });
 
@@ -75,27 +75,29 @@ describe("xpToNextLevel", () => {
   it("returns correct values for 0 XP (level 1)", () => {
     const result = xpToNextLevel(0);
     expect(result.current).toBe(0);
-    expect(result.needed).toBe(500); // threshold[1] - threshold[0]
+    expect(result.needed).toBe(LEVEL_THRESHOLDS[1]); // first threshold
     expect(result.progress).toBe(0);
   });
 
   it("returns correct progress mid-level", () => {
-    const result = xpToNextLevel(250);
-    expect(result.current).toBe(250);
-    expect(result.needed).toBe(500);
-    expect(result.progress).toBeCloseTo(0.5, 2);
+    const mid = Math.floor(LEVEL_THRESHOLDS[1] / 2);
+    const result = xpToNextLevel(mid);
+    expect(result.current).toBe(mid);
+    expect(result.needed).toBe(LEVEL_THRESHOLDS[1]);
+    expect(result.progress).toBeCloseTo(0.5, 1);
   });
 
   it("returns 0 progress at exact threshold", () => {
-    const result = xpToNextLevel(500);
-    // Now at level 2, threshold[1]=500, threshold[2]=1200
+    const t1 = LEVEL_THRESHOLDS[1];
+    const t2 = LEVEL_THRESHOLDS[2];
+    const result = xpToNextLevel(t1);
     expect(result.current).toBe(0);
-    expect(result.needed).toBe(700); // 1200 - 500
+    expect(result.needed).toBe(t2 - t1);
     expect(result.progress).toBe(0);
   });
 
   it("returns full progress at max level", () => {
-    const result = xpToNextLevel(999999);
+    const result = xpToNextLevel(99999999);
     expect(result.progress).toBe(1);
   });
 
@@ -161,8 +163,10 @@ describe("DISTANCE_UNLOCKS", () => {
   it("has correct mapping", () => {
     expect(DISTANCE_UNLOCKS[1]).toEqual(["5k"]);
     expect(DISTANCE_UNLOCKS[3]).toEqual(["10k"]);
-    expect(DISTANCE_UNLOCKS[7]).toEqual(["half_marathon"]);
-    expect(DISTANCE_UNLOCKS[12]).toEqual(["marathon"]);
+    expect(DISTANCE_UNLOCKS[5]).toEqual(["half_marathon"]);
+    expect(DISTANCE_UNLOCKS[8]).toEqual(["marathon"]);
+    expect(DISTANCE_UNLOCKS[12]).toEqual(["50k"]);
+    expect(DISTANCE_UNLOCKS[50]).toEqual(["barkley"]);
   });
 });
 
@@ -188,6 +192,7 @@ describe("checkUnlocks", () => {
     expect(newUnlocks).toContain("10k");
     expect(newUnlocks).toContain("half_marathon");
     expect(newUnlocks).toContain("marathon");
+    expect(newUnlocks).toContain("50k");
     expect(newUnlocks).not.toContain("5k");
   });
 
@@ -196,8 +201,8 @@ describe("checkUnlocks", () => {
   });
 
   it("returns multiple unlocks when skipping levels", () => {
-    // Jump from level 1 to level 7 with only 5k unlocked
-    const newUnlocks = checkUnlocks(7, ["5k"]);
+    // Jump from level 1 to level 5 with only 5k unlocked
+    const newUnlocks = checkUnlocks(5, ["5k"]);
     expect(newUnlocks).toEqual(["10k", "half_marathon"]);
   });
 });

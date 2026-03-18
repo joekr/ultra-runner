@@ -45,6 +45,7 @@ function makeRace(overrides: Partial<ActiveRace> = {}): ActiveRace {
     pacePerSegment: [],
     segmentResults: [],
     rngSeed: 12345,
+    raceDebuffs: [],
     ...overrides,
   };
 }

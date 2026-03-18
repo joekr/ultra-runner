@@ -133,6 +133,16 @@ export interface RaceState {
   active: ActiveRace | null;
 }
 
+export interface RaceDebuff {
+  id: string;
+  name: string;
+  effect: string;           // human-readable
+  segmentsRemaining: number; // -1 = rest of race
+  fatiguePenalty: number;    // extra fatigue per segment
+  speedPenalty: number;      // multiplier on segment time (e.g., 1.1 = 10% slower)
+  moraleDrain: number;       // extra morale loss per segment
+}
+
 export interface ActiveRace {
   raceId: string;
   currentSegment: number;
@@ -146,6 +156,7 @@ export interface ActiveRace {
   pacePerSegment: string[];
   segmentResults: SegmentResult[];
   rngSeed: number;
+  raceDebuffs: RaceDebuff[];
 }
 
 export interface SegmentResult {
