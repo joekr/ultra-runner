@@ -1,7 +1,7 @@
 // systems/economy.ts — Money management, purchases, race prizes
 
 import type { InventoryState } from "../types";
-import { createGearInstance, getGearTemplate } from "./gear";
+import { createGearInstance, getGearTemplate, getConsumableTemplate } from "./gear";
 import balanceData from "../data/balance.json";
 
 // ── Affordability check ──────────────────────────────────────────────
@@ -40,11 +40,54 @@ export function buyGear(templateId: string, inventory: InventoryState): BuyGearR
 
   if (template.slot === "shoes") {
     updatedInventory.shoes = [...inventory.shoes, instance];
+  } else if (template.slot === "accessories") {
+    updatedInventory.accessories = [...inventory.accessories, instance];
   } else {
     updatedInventory.apparel = [...inventory.apparel, instance];
   }
 
   return { inventory: updatedInventory, success: true };
+}
+
+// ── Purchase consumable ──────────────────────────────────────────
+
+export interface BuyConsumableResult {
+  inventory: InventoryState;
+  success: boolean;
+  error?: string;
+}
+
+export function buyConsumable(
+  templateId: string,
+  quantity: number,
+  inventory: InventoryState,
+): BuyConsumableResult {
+  const template = getConsumableTemplate(templateId);
+  if (!template) {
+    return { inventory, success: false, error: `Unknown consumable: ${templateId}` };
+  }
+
+  const totalCost = template.cost * quantity;
+  if (!canAfford(inventory.money, totalCost)) {
+    return {
+      inventory,
+      success: false,
+      error: `Insufficient funds: need $${totalCost}, have $${inventory.money}`,
+    };
+  }
+
+  const currentQty = inventory.consumables[templateId] ?? 0;
+  return {
+    inventory: {
+      ...inventory,
+      money: inventory.money - totalCost,
+      consumables: {
+        ...inventory.consumables,
+        [templateId]: currentQty + quantity,
+      },
+    },
+    success: true,
+  };
 }
 
 // ── Race prizes ──────────────────────────────────────────────────────

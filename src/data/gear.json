@@ -30,6 +30,33 @@
         "roadPenalty": 0.05
       },
       "description": "Aggressive lugs for dirt and rocks. Awkward on pavement."
+    },
+    {
+      "id": "carbon_racer",
+      "name": "Carbon Racer",
+      "tier": 4,
+      "cost": 250,
+      "durability": 150,
+      "effects": { "speedBonus": 0.08, "terrain": "flat_road" },
+      "description": "Carbon-plated super shoe. 4% faster on roads. Fragile."
+    },
+    {
+      "id": "premium_trail",
+      "name": "Premium Trail Shoe",
+      "tier": 4,
+      "cost": 200,
+      "durability": 300,
+      "effects": { "speedBonus": 0.12, "terrain": "rolling_hills" },
+      "description": "Aggressive lugs, rock plate. Made for the mountains."
+    },
+    {
+      "id": "ultra_cushion",
+      "name": "Ultra Cushion",
+      "tier": 3,
+      "cost": 170,
+      "durability": 500,
+      "effects": { "speedBonus": 0.03 },
+      "description": "Maximum cushion for maximum miles. Built to last."
     }
   ],
   "apparel": [
@@ -68,6 +95,201 @@
       "durability": 9999,
       "effects": { "blistReduction": 0.3 },
       "description": "Thin, moisture-wicking, and worth every penny."
+    },
+    {
+      "id": "racing_singlet",
+      "name": "Racing Singlet",
+      "tier": 2,
+      "cost": 55,
+      "durability": 9999,
+      "effects": { "speedBonus": 0.02 },
+      "description": "Lightweight race-day singlet. Every gram counts."
+    },
+    {
+      "id": "rain_jacket",
+      "name": "Rain Jacket",
+      "tier": 2,
+      "cost": 120,
+      "durability": 9999,
+      "effects": { "weatherProtection": 0.3 },
+      "description": "Packable and breathable. Required gear for some races."
+    },
+    {
+      "id": "sun_hat",
+      "name": "Sun Hat",
+      "tier": 1,
+      "cost": 25,
+      "durability": 9999,
+      "effects": { "heatProtection": 0.2 },
+      "description": "Keeps the sun off your face. Surprisingly important."
+    },
+    {
+      "id": "compression_socks",
+      "name": "Compression Socks",
+      "tier": 2,
+      "cost": 35,
+      "durability": 9999,
+      "effects": { "blistReduction": 0.4, "recoveryBonus": 0.05 },
+      "description": "Graduated compression. Recovery starts during the run."
+    }
+  ],
+  "accessories": [
+    {
+      "id": "gps_watch_basic",
+      "name": "GPS Watch (Basic)",
+      "tier": 1,
+      "cost": 150,
+      "durability": 9999,
+      "effects": { "xpBonus": 0.1 },
+      "description": "Track your pace, distance, and heart rate. The first real upgrade."
+    },
+    {
+      "id": "gps_watch_advanced",
+      "name": "GPS Watch (Advanced)",
+      "tier": 3,
+      "cost": 350,
+      "durability": 9999,
+      "effects": { "xpBonus": 0.2 },
+      "description": "Training load, recovery advisor, route mapping. Data nerd paradise."
+    },
+    {
+      "id": "foam_roller",
+      "name": "Foam Roller",
+      "tier": 1,
+      "cost": 30,
+      "durability": 9999,
+      "effects": { "recoveryBonus": 0.1 },
+      "description": "Hurts so good. Speeds up recovery between workouts."
+    },
+    {
+      "id": "massage_gun",
+      "name": "Massage Gun",
+      "tier": 2,
+      "cost": 120,
+      "durability": 9999,
+      "effects": { "recoveryBonus": 0.15 },
+      "description": "Percussive therapy. Your muscles will thank you."
+    },
+    {
+      "id": "headlamp_basic",
+      "name": "Headlamp (Basic)",
+      "tier": 1,
+      "cost": 40,
+      "durability": 9999,
+      "effects": { "nightBonus": 0.1 },
+      "description": "200 lumens. Enough for dark morning runs."
+    }
+  ],
+  "consumables": [
+    {
+      "id": "basic_gel",
+      "name": "Basic Energy Gel",
+      "tier": 1,
+      "cost": 3,
+      "description": "Basic energy gel. 100 calories of quick fuel. Tastes like sweet paste.",
+      "effects": { "fatigueReduction": 5 },
+      "requiredNutritionIQ": 0,
+      "stackable": true
+    },
+    {
+      "id": "electrolyte_mix",
+      "name": "Electrolyte Mix",
+      "tier": 1,
+      "cost": 3,
+      "description": "Mix into your water. Keeps the cramps away.",
+      "effects": { "fatigueReduction": 4 },
+      "requiredNutritionIQ": 0,
+      "stackable": true
+    },
+    {
+      "id": "energy_chews",
+      "name": "Energy Chews",
+      "tier": 1,
+      "cost": 3,
+      "description": "Fruit-flavored energy chews. Easy on the stomach.",
+      "effects": { "fatigueReduction": 4 },
+      "requiredNutritionIQ": 0,
+      "stackable": true
+    },
+    {
+      "id": "caffeinated_gel",
+      "name": "Caffeinated Gel",
+      "tier": 2,
+      "cost": 4,
+      "description": "Caffeinated energy gel. The kick when you need it most. Careful — too much caffeine on an untrained gut is trouble.",
+      "effects": { "fatigueReduction": 7 },
+      "requiredNutritionIQ": 15,
+      "stackable": true
+    },
+    {
+      "id": "electrolyte_gummies",
+      "name": "Electrolyte Gummies",
+      "tier": 2,
+      "cost": 5,
+      "description": "Electrolyte gummies with sodium and potassium. Fight the cramps.",
+      "effects": { "fatigueReduction": 6 },
+      "requiredNutritionIQ": 10,
+      "stackable": true
+    },
+    {
+      "id": "snack_bar",
+      "name": "Snack Bar",
+      "tier": 2,
+      "cost": 3,
+      "description": "Oat and honey bar. Real food for real miles. Takes a trained gut to digest mid-run.",
+      "effects": { "fatigueReduction": 7 },
+      "requiredNutritionIQ": 15,
+      "stackable": true
+    },
+    {
+      "id": "stroopwafel",
+      "name": "Stroopwafel",
+      "tier": 2,
+      "cost": 4,
+      "description": "Dutch caramel waffle. The perfect mid-run treat. Runners swear by these.",
+      "effects": { "fatigueReduction": 9 },
+      "requiredNutritionIQ": 20,
+      "stackable": true
+    },
+    {
+      "id": "premium_gel",
+      "name": "Premium Hydrogel",
+      "tier": 3,
+      "cost": 6,
+      "description": "Hydrogel technology. Goes down smooth, no water needed. Science in a packet.",
+      "effects": { "fatigueReduction": 10 },
+      "requiredNutritionIQ": 25,
+      "stackable": true
+    },
+    {
+      "id": "peanut_butter_sandwich",
+      "name": "PB&J Sandwich",
+      "tier": 3,
+      "cost": 2,
+      "description": "PB&J on white bread. The ultra runner's secret weapon. Cheap, dense, perfect — if your gut can handle solid food at pace.",
+      "effects": { "fatigueReduction": 12 },
+      "requiredNutritionIQ": 30,
+      "stackable": true
+    },
+    {
+      "id": "boiled_potato",
+      "name": "Boiled Potato",
+      "tier": 3,
+      "cost": 1,
+      "description": "Salted boiled potato. Sounds weird. Tastes like heaven at mile 50. The cheapest, most effective fuel — but only veterans can stomach it mid-race.",
+      "effects": { "fatigueReduction": 14 },
+      "requiredNutritionIQ": 35,
+      "stackable": true
+    },
+    {
+      "id": "recovery_drink",
+      "name": "Recovery Drink",
+      "tier": 2,
+      "cost": 5,
+      "description": "Post-run recovery shake. Protein and carbs in one.",
+      "effects": { "fatigueReduction": 8 },
+      "requiredNutritionIQ": 10,
+      "stackable": true
     }
   ]
 }

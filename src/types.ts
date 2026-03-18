@@ -1,8 +1,17 @@
 // types.ts — All shared TypeScript interfaces/types for Ultra Runner Simulator
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 // ── Top-Level Game State ──────────────────────────────────────────────
+
+export interface CoachState {
+  hired: boolean;
+  tier: number;           // 1-3
+  name: string;
+  weeklyCost: number;
+  xpMultiplier: number;   // 1.0 = full XP (same as perfect tapping)
+  fatigueReduction: number; // 0.15 = 15% less fatigue
+}
 
 export interface GameState {
   version: number;
@@ -21,6 +30,7 @@ export interface GameState {
   history: HistoryState;
   flags: FlagState;
   settings: SettingsState;
+  coach: CoachState | null;
 }
 
 // ── Runner ────────────────────────────────────────────────────────────
@@ -85,7 +95,7 @@ export type WeeklyPlan = [
 ];
 
 export interface DayPlan {
-  workout: "easy_run" | "long_run" | "intervals" | "rest";
+  workout: "easy_run" | "long_run" | "intervals" | "tempo_run" | "hill_repeats" | "rest";
 }
 
 export interface ScheduledRace {
@@ -101,6 +111,7 @@ export interface TrainingState {
   previousWeekMileage: number;
   totalMiles: number;
   streak: number;
+  recoveryToolsUsedOnDay: Record<string, number>; // toolId -> gameDay last used
 }
 
 export interface ActiveWorkout {
@@ -149,8 +160,11 @@ export interface InventoryState {
   money: number;
   shoes: OwnedGear[];
   apparel: OwnedGear[];
+  accessories: OwnedGear[];
   equippedShoe: string | null;   // Gear instance ID
   equippedApparel: string[];     // Gear instance IDs
+  equippedAccessories: string[]; // Gear instance IDs
+  consumables: Record<string, number>; // templateId -> quantity owned
 }
 
 export interface OwnedGear {
@@ -209,7 +223,8 @@ export type Screen =
   | "shop"
   | "stats"
   | "settings"
-  | "runner_creation";
+  | "runner_creation"
+  | "coach";
 
 // ── Idle System ───────────────────────────────────────────────────────
 

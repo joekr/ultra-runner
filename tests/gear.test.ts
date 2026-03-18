@@ -21,8 +21,11 @@ function makeInventory(overrides?: Partial<InventoryState>): InventoryState {
     money: 200,
     shoes: [],
     apparel: [],
+    accessories: [],
     equippedShoe: null,
     equippedApparel: [],
+    equippedAccessories: [],
+    consumables: {},
     ...overrides,
   };
 }
@@ -32,8 +35,13 @@ function makeInventory(overrides?: Partial<InventoryState>): InventoryState {
 describe("getShoeTemplates", () => {
   it("returns all shoe templates from gear.json", () => {
     const shoes = getShoeTemplates();
-    expect(shoes.length).toBe(3);
-    expect(shoes.map((s) => s.id)).toEqual(["basic_trainers", "cushioned_road", "trail_shoes"]);
+    expect(shoes.length).toBe(6);
+    expect(shoes.map((s) => s.id)).toContain("basic_trainers");
+    expect(shoes.map((s) => s.id)).toContain("cushioned_road");
+    expect(shoes.map((s) => s.id)).toContain("trail_shoes");
+    expect(shoes.map((s) => s.id)).toContain("carbon_racer");
+    expect(shoes.map((s) => s.id)).toContain("premium_trail");
+    expect(shoes.map((s) => s.id)).toContain("ultra_cushion");
     shoes.forEach((s) => expect(s.slot).toBe("shoes"));
   });
 });
@@ -41,9 +49,11 @@ describe("getShoeTemplates", () => {
 describe("getApparelTemplates", () => {
   it("returns all apparel templates from gear.json", () => {
     const apparel = getApparelTemplates();
-    expect(apparel.length).toBe(4);
+    expect(apparel.length).toBe(8);
     expect(apparel.map((a) => a.id)).toContain("cotton_tee");
     expect(apparel.map((a) => a.id)).toContain("running_socks");
+    expect(apparel.map((a) => a.id)).toContain("racing_singlet");
+    expect(apparel.map((a) => a.id)).toContain("compression_socks");
     apparel.forEach((a) => expect(a.slot).toBe("apparel"));
   });
 });

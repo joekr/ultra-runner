@@ -1,12 +1,16 @@
 import { useState } from "preact/hooks";
 import { gameState } from "../state/gameState";
-import { updateGameState, navigateTo } from "../state/actions";
+import { updateGameState, navigateTo, completeRaceAction, dnfRaceAction } from "../state/actions";
+import type { RaceCompletionInfo, DNFCompletionInfo } from "../state/actions";
+import { resolveEventChoice } from "../systems/race";
+import type { RaceEvent } from "../systems/race";
 import { Button } from "../components/Button";
 import { ProgressBar } from "../components/ProgressBar";
 import { EventModal } from "../components/EventModal";
 import { AidStationPanel } from "../components/AidStationPanel";
 import racesData from "../data/races.json";
 import eventsData from "../data/events.json";
+import { fatigueCurveMultiplier } from "../systems/stats";
 
 type Pace = "conservative" | "steady" | "aggressive";
 
@@ -22,8 +26,16 @@ interface EventDef {
   id: string;
   name: string;
   description: string;
-  choices: Array<{ label: string; effect: Record<string, number>; outcome: string }> | null;
+  type: string;
+  baseProbability: number;
+  terrainTypes: string[];
+  minTier: number;
+  minSegment?: number;
+  oncePerRace?: boolean;
+  statCheck?: string | null;
+  gearCheck?: string;
   effect: Record<string, number> | null;
+  choices: Array<{ label: string; effect: Record<string, number>; outcome: string }> | null;
 }
 
 function formatRaceTime(seconds: number): string {
@@ -33,16 +45,34 @@ function formatRaceTime(seconds: number): string {
   return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+function formatDistanceLabel(key: string): string {
+  const labels: Record<string, string> = {
+    "5k": "5K",
+    "10k": "10K",
+    "half_marathon": "Half Marathon",
+    "marathon": "Marathon",
+  };
+  return labels[key] ?? key;
+}
+
 export function ActiveRace() {
   const state = gameState.value;
   const activeRace = state?.race.active;
 
   const [pendingEvent, setPendingEvent] = useState<EventDef | null>(null);
+  const [outcomeText, setOutcomeText] = useState<string | null>(null);
   const [showAidStation, setShowAidStation] = useState(false);
-  const [raceComplete, setRaceComplete] = useState(false);
+  const [raceResult, setRaceResult] = useState<RaceCompletionInfo | null>(null);
+  const [dnfResult, setDnfResult] = useState<DNFCompletionInfo | null>(null);
 
   if (!state || !activeRace) {
-    // If no active race, try to initialize one from scheduled races
+    // Check if we have a result to show (race just completed and state was updated)
+    if (raceResult) {
+      return renderFinishScreen();
+    }
+    if (dnfResult) {
+      return renderDNFScreen();
+    }
     return (
       <div class="active-race">
         <div style={{ textAlign: "center", paddingTop: "var(--space-16)" }}>
@@ -64,7 +94,7 @@ export function ActiveRace() {
   const segDef = raceData?.segmentDefinitions[activeRace.currentSegment];
 
   function choosePace(pace: Pace) {
-    if (!state || !activeRace || raceComplete) return;
+    if (!state || !activeRace || raceResult || dnfResult) return;
 
     // Simple segment simulation
     const paceModifiers: Record<Pace, number> = {
@@ -84,11 +114,15 @@ export function ActiveRace() {
       aggressive: 14,
     };
 
-    const fatigueCost: Record<Pace, number> = {
+    const baseFatigueCost: Record<Pace, number> = {
       conservative: 4,
       steady: 7,
       aggressive: 12,
     };
+
+    // Fitness reduces fatigue accumulation during races
+    const fitnessMult = state ? fatigueCurveMultiplier(state.stats, state.runner.level) : 1;
+    const fatigueCost = baseFatigueCost[pace] * fitnessMult;
 
     const moraleDelta: Record<Pace, number> = {
       conservative: 1,
@@ -97,7 +131,7 @@ export function ActiveRace() {
     };
 
     const newEnergy = Math.max(0, activeRace.energy - energyCost[pace]);
-    const newFatigue = Math.min(100, activeRace.fatigue + fatigueCost[pace]);
+    const newFatigue = Math.min(100, activeRace.fatigue + fatigueCost);
     const newMorale = Math.max(
       0,
       Math.min(100, activeRace.morale + moraleDelta[pace]),
@@ -117,7 +151,7 @@ export function ActiveRace() {
     const segmentResult = {
       segment: activeRace.currentSegment,
       time: segmentTime,
-      events: [],
+      events: [] as string[],
       statChanges: {},
     };
 
@@ -138,7 +172,11 @@ export function ActiveRace() {
     });
 
     if (isComplete) {
-      setRaceComplete(true);
+      // Use the real race completion system
+      const info = completeRaceAction();
+      if (info) {
+        setRaceResult(info);
+      }
       return;
     }
 
@@ -162,14 +200,35 @@ export function ActiveRace() {
     }
   }
 
-  function handleEventChoice(_index: number) {
-    // Apply event choice effects (simplified - just dismiss)
-    setPendingEvent(null);
-
-    // Check for aid station after event
-    if (segDef?.hasAidStation) {
-      setShowAidStation(true);
+  function handleEventChoice(index: number) {
+    if (!pendingEvent || !state || !state.race.active) {
+      setPendingEvent(null);
+      return;
     }
+
+    // Wire up resolveEventChoice from race.ts
+    const { race: updatedRace, outcomeText: text } = resolveEventChoice(
+      pendingEvent as RaceEvent,
+      index,
+      state.race.active,
+    );
+
+    // Apply the updated race state
+    updateGameState({
+      race: { active: updatedRace },
+    });
+
+    // Show outcome text briefly
+    setPendingEvent(null);
+    setOutcomeText(text);
+
+    // Auto-dismiss outcome after 2 seconds, then check for aid station
+    setTimeout(() => {
+      setOutcomeText(null);
+      if (segDef?.hasAidStation) {
+        setShowAidStation(true);
+      }
+    }, 2000);
   }
 
   function handleAidStation(timeSpent: number) {
@@ -191,59 +250,209 @@ export function ActiveRace() {
   function handleDNF() {
     if (!state || !activeRace) return;
 
-    const completedRace = {
-      raceId: activeRace.raceId,
-      gameDay: state.calendar.gameDay,
-      finishTime: activeRace.elapsedTime,
-      position: activeRace.totalRunners,
-      totalRunners: activeRace.totalRunners,
-      result: "dnf" as const,
-      xpEarned: 25,
-      moneyEarned: 0,
-      personalBest: false,
-    };
-
-    updateGameState({
-      race: { active: null },
-      history: {
-        ...state.history,
-        completedRaces: [...state.history.completedRaces, completedRace],
-        totalRacesDNF: state.history.totalRacesDNF + 1,
-      },
-    });
-
-    navigateTo("dashboard");
+    const info = dnfRaceAction("Dropped out");
+    if (info) {
+      setDnfResult(info);
+    }
   }
 
-  if (raceComplete) {
-    // Show results inline (will navigate to results screen)
-    const completedRace = {
-      raceId: activeRace.raceId,
-      gameDay: state.calendar.gameDay,
-      finishTime: activeRace.elapsedTime,
-      position: activeRace.position,
-      totalRunners: activeRace.totalRunners,
-      result: "finished" as const,
-      xpEarned: 100,
-      moneyEarned: 50,
-      personalBest: false, // TODO: check actual PB
-    };
+  // ── Results screens ─────────────────────────────────────────────────
 
-    updateGameState({
-      race: { active: null },
-      history: {
-        ...state.history,
-        completedRaces: [...state.history.completedRaces, completedRace],
-        totalRacesFinished: state.history.totalRacesFinished + 1,
-      },
-      inventory: {
-        ...state.inventory,
-        money: state.inventory.money + completedRace.moneyEarned,
-      },
-    });
+  function renderFinishScreen() {
+    if (!raceResult) return null;
+    const { result, leveledUp, newLevel, newUnlocks, levelPerks } = raceResult;
+    const percentile = Math.round((result.position / result.totalRunners) * 100);
 
-    // Navigate handled by render below
+    return (
+      <div class="active-race" style={{ padding: "var(--space-6)" }}>
+        <div style={{ textAlign: "center" }}>
+          {result.isPR && (
+            <div style={{
+              fontSize: "var(--text-3xl, 2rem)",
+              fontWeight: 800,
+              color: "#d4a017",
+              textShadow: "0 0 20px rgba(212, 160, 23, 0.4)",
+              marginBottom: "var(--space-3)",
+              animation: "pulse 1.5s ease-in-out infinite",
+            }}>
+              PERSONAL BEST!
+            </div>
+          )}
+
+          <div style={{
+            fontSize: "var(--text-3xl, 2rem)",
+            fontWeight: 700,
+            fontVariantNumeric: "tabular-nums",
+            marginBottom: "var(--space-2)",
+          }}>
+            {formatRaceTime(result.finishTime)}
+          </div>
+
+          <div style={{
+            fontSize: "var(--text-lg, 1.125rem)",
+            color: "var(--color-text-muted)",
+            marginBottom: "var(--space-4)",
+          }}>
+            {ordinal(result.position)} / {result.totalRunners} — top {percentile}%
+          </div>
+
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: "var(--space-6)",
+            marginBottom: "var(--space-4)",
+          }}>
+            <div>
+              <div style={{ fontSize: "var(--text-xl, 1.25rem)", fontWeight: 600, color: "var(--color-sage)" }}>
+                +{result.xpEarned} XP
+              </div>
+              <div style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+                Experience
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: "var(--text-xl, 1.25rem)", fontWeight: 600, color: "var(--color-sage)" }}>
+                ${result.moneyEarned}
+              </div>
+              <div style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+                Prize Money
+              </div>
+            </div>
+          </div>
+
+          {leveledUp && (
+            <div style={{
+              background: "var(--color-surface, #2a2a2a)",
+              border: "2px solid #d4a017",
+              borderRadius: "var(--radius-lg, 12px)",
+              padding: "var(--space-4)",
+              marginBottom: "var(--space-4)",
+              textAlign: "center",
+            }}>
+              <div style={{ fontSize: "var(--text-lg, 1.125rem)", fontWeight: 700, color: "#d4a017" }}>
+                Level Up!
+              </div>
+              <div style={{ color: "var(--color-text-muted)" }}>
+                You're now Level {newLevel}
+              </div>
+              {newUnlocks.length > 0 && (
+                <div style={{ marginTop: "var(--space-2)", color: "var(--color-sage)" }}>
+                  {newUnlocks.map((d) => (
+                    <div key={d}>{formatDistanceLabel(d)} races are now available!</div>
+                  ))}
+                </div>
+              )}
+              {levelPerks.length > 0 && (
+                <div style={{
+                  marginTop: "var(--space-3)",
+                  textAlign: "left",
+                  background: "rgba(122, 139, 111, 0.1)",
+                  borderRadius: "var(--radius-md, 8px)",
+                  padding: "var(--space-2) var(--space-3)",
+                }}>
+                  <div style={{ fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--color-sage)", marginBottom: "var(--space-1)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Stats Improved
+                  </div>
+                  {levelPerks.map((perk, i) => (
+                    <div key={i} style={{ fontSize: "var(--text-sm)", color: "var(--color-text)", padding: "2px 0" }}>
+                      {perk}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {!leveledUp && newUnlocks.length > 0 && (
+            <div style={{
+              background: "var(--color-surface, #2a2a2a)",
+              border: "1px solid var(--color-sage)",
+              borderRadius: "var(--radius-lg, 12px)",
+              padding: "var(--space-3)",
+              marginBottom: "var(--space-4)",
+            }}>
+              {newUnlocks.map((d) => (
+                <div key={d} style={{ color: "var(--color-sage)" }}>
+                  {formatDistanceLabel(d)} races are now available!
+                </div>
+              ))}
+            </div>
+          )}
+
+          <Button label="Continue" onClick={() => navigateTo("dashboard")} />
+        </div>
+      </div>
+    );
   }
+
+  function renderDNFScreen() {
+    if (!dnfResult) return null;
+    const { result, leveledUp, newLevel, newUnlocks } = dnfResult;
+
+    return (
+      <div class="active-race" style={{ padding: "var(--space-6)" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            fontSize: "var(--text-2xl, 1.5rem)",
+            fontWeight: 700,
+            marginBottom: "var(--space-3)",
+          }}>
+            DNF
+          </div>
+
+          <p style={{
+            color: "var(--color-text-muted)",
+            fontStyle: "italic",
+            marginBottom: "var(--space-4)",
+            lineHeight: 1.6,
+          }}>
+            Not every run ends at the finish line. But every run teaches you something.
+          </p>
+
+          {result.xpEarned > 0 && (
+            <div style={{ marginBottom: "var(--space-4)" }}>
+              <div style={{ fontSize: "var(--text-lg, 1.125rem)", fontWeight: 600, color: "var(--color-sage)" }}>
+                +{result.xpEarned} XP
+              </div>
+              <div style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+                Partial experience earned
+              </div>
+            </div>
+          )}
+
+          {leveledUp && (
+            <div style={{
+              background: "var(--color-surface, #2a2a2a)",
+              border: "2px solid #d4a017",
+              borderRadius: "var(--radius-lg, 12px)",
+              padding: "var(--space-4)",
+              marginBottom: "var(--space-4)",
+            }}>
+              <div style={{ fontSize: "var(--text-lg, 1.125rem)", fontWeight: 700, color: "#d4a017" }}>
+                Level Up!
+              </div>
+              <div style={{ color: "var(--color-text-muted)" }}>
+                You're now Level {newLevel}
+              </div>
+              {newUnlocks.length > 0 && (
+                <div style={{ marginTop: "var(--space-2)", color: "var(--color-sage)" }}>
+                  {newUnlocks.map((d) => (
+                    <div key={d}>{formatDistanceLabel(d)} races are now available!</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <Button label="Continue" onClick={() => navigateTo("dashboard")} />
+        </div>
+      </div>
+    );
+  }
+
+  // If we have a result, show the results screen
+  if (raceResult) return renderFinishScreen();
+  if (dnfResult) return renderDNFScreen();
 
   return (
     <div class="active-race">
@@ -327,8 +536,19 @@ export function ActiveRace() {
         />
       </div>
 
+      {/* Outcome text overlay */}
+      {outcomeText && (
+        <div class="modal-overlay">
+          <div class="modal-content" style={{ textAlign: "center" }}>
+            <p style={{ marginBottom: "var(--space-3)", lineHeight: 1.5 }}>
+              {outcomeText}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Event Modal */}
-      {pendingEvent && (
+      {pendingEvent && !outcomeText && (
         <EventModal
           event={{
             name: pendingEvent.name,
@@ -347,4 +567,12 @@ export function ActiveRace() {
       )}
     </div>
   );
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────
+
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }

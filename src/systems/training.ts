@@ -121,19 +121,29 @@ export function computeFatigue(
   currentFatigue: number,
   recoveryStatValue: number,
   dtMs: number,
+  fitnessMultiplier?: number,
 ): number {
   const workout = findWorkout(workoutType);
   let baseFatigue = workout.baseFatiguePerTick * (dtMs / 100);
 
-  // Quality multipliers
-  if (cadenceResult.quality === "hard") {
-    baseFatigue *= 1.5;
-  } else if (cadenceResult.quality === "overtrained") {
-    baseFatigue *= 2.5;
+  // Quality multipliers — perfect cadence reduces fatigue, bad cadence increases it
+  const fatigueQualityMultipliers: Record<CadenceResult["quality"], number> = {
+    sweet_spot: 0.7,     // perfect form = 30% less fatigue
+    easy: 1.0,           // slightly slow = normal fatigue
+    undertrained: 1.0,   // way too slow = normal (not pushing hard enough to tire faster)
+    hard: 1.5,           // pushing too fast = 50% more fatigue
+    overtrained: 2.5,    // mashing = 150% more fatigue
+  };
+  baseFatigue *= fatigueQualityMultipliers[cadenceResult.quality];
+
+  // Fitness-based reduction: fitter runners accumulate fatigue slower
+  // This is the primary lever — a fitness 80 runner gets ~65% less fatigue
+  if (fitnessMultiplier !== undefined) {
+    baseFatigue *= fitnessMultiplier;
   }
 
-  // Recovery stat reduction
-  const recoveryMod = Math.max(0.5, 1 - recoveryStatValue / 200);
+  // Recovery stat gives a small additional reduction on top
+  const recoveryMod = Math.max(0.7, 1 - recoveryStatValue / 300);
   baseFatigue *= recoveryMod;
 
   const newFatigue = currentFatigue + baseFatigue;
@@ -235,4 +245,50 @@ export function completeWorkout(workout: ActiveWorkout): {
   const totalMiles = workoutData.baseMiles * completionRatio;
 
   return { totalStatGains, totalMiles };
+}
+
+// ── Mileage helpers ─────────────────────────────────────────────────
+
+export function getBaseMiles(workoutType: string): number {
+  return findWorkout(workoutType).baseMiles;
+}
+
+// ── Walking mechanic ────────────────────────────────────────────────
+
+/**
+ * Compute new (lower) fatigue while walking.
+ * Base recovery rate: -0.3 per 100ms tick.
+ * recoveryBonus from gear multiplies recovery: (1 + recoveryBonus * 3).
+ */
+export function computeWalkingFatigue(
+  currentFatigue: number,
+  recoveryBonus: number,
+  dtMs: number,
+): number {
+  const baseRecovery = -0.3 * (dtMs / 100);
+  const bonusMultiplier = 1 + recoveryBonus * 3;
+  const newFatigue = currentFatigue + baseRecovery * bonusMultiplier;
+  return Math.min(100, Math.max(0, newFatigue));
+}
+
+/**
+ * Stat gains while walking: 20% of easy_run base gains.
+ * Walking always counts as easy effort.
+ */
+export function computeWalkingStatGains(
+  fatigue: number,
+  dtMs: number,
+): Record<string, number> {
+  const easyRun = findWorkout("easy_run");
+  const baseXp = easyRun.baseXpPerTick * (dtMs / 100);
+  // Walking multiplier: 0.2 (20% of normal)
+  const walkingXp = baseXp * 0.2;
+  const fatiguePenalty = Math.max(0.2, 1 - fatigue / 150);
+  const finalXp = walkingXp * fatiguePenalty;
+
+  const gains: Record<string, number> = {};
+  for (const [stat, ratio] of Object.entries(easyRun.statDistribution)) {
+    gains[stat] = finalXp * ratio;
+  }
+  return gains;
 }

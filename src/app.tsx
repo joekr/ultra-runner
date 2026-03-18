@@ -11,6 +11,8 @@ import { ActiveRace } from "./screens/ActiveRace";
 import { Shop } from "./screens/Shop";
 import { StatsView } from "./screens/StatsView";
 import { Settings } from "./screens/Settings";
+import { CoachSelect } from "./screens/CoachSelect";
+import { AchievementToast } from "./components/AchievementToast";
 
 const FULLSCREEN_SCREENS = new Set(["active_workout", "active_race", "runner_creation"]);
 
@@ -52,6 +54,8 @@ export function App() {
         return <StatsView />;
       case "settings":
         return <Settings />;
+      case "coach":
+        return <CoachSelect />;
       default:
         return <Dashboard />;
     }
@@ -61,6 +65,7 @@ export function App() {
     <div id="app-root">
       {renderScreen()}
       {showNav && <NavBar />}
+      <AchievementToast />
     </div>
   );
 }

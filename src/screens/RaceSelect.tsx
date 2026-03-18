@@ -1,7 +1,8 @@
 import { gameState } from "../state/gameState";
-import { registerForRace, navigateTo } from "../state/actions";
+import { registerForRace, startRace } from "../state/actions";
 import { Button } from "../components/Button";
 import racesData from "../data/races.json";
+import { MountainIcon } from "../components/Icons";
 
 interface RaceDefinition {
   id: string;
@@ -64,6 +65,7 @@ export function RaceSelect() {
               class={`card race-card ${!canAfford && !alreadyRegistered ? "card--disabled" : ""}`}
             >
               <div class="race-card__header">
+                <MountainIcon size={18} color="var(--color-warm-gray-400)" />
                 <span class="race-card__name">{race.name}</span>
                 <span class="race-card__distance">
                   {race.distance} {race.unit}
@@ -106,21 +108,24 @@ export function RaceSelect() {
           {upcomingRaces.map((sr) => {
             const race = races.find((r) => r.id === sr.raceId);
             const daysAway = sr.gameDay - calendar.gameDay;
+            const canStart = daysAway <= 0 && calendar.weekDay === 5; // Saturday only
             return (
               <div key={sr.raceId + sr.gameDay} class="card" style={{ marginBottom: "var(--space-2)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <strong>{race?.name ?? sr.raceId}</strong>
-                    <div style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
-                      {daysAway <= 0
+                    <div style={{ fontSize: "var(--text-sm)", color: canStart ? "var(--color-terracotta)" : "var(--color-text-muted)" }}>
+                      {canStart
                         ? "Race day!"
-                        : `${daysAway} day${daysAway !== 1 ? "s" : ""} away`}
+                        : daysAway === 1
+                          ? "Saturday (Tomorrow)"
+                          : `Saturday (${daysAway} days away)`}
                     </div>
                   </div>
-                  {daysAway <= 0 && (
+                  {canStart && (
                     <Button
                       label="Start Race"
-                      onClick={() => navigateTo("active_race")}
+                      onClick={() => startRace(sr.raceId)}
                     />
                   )}
                 </div>

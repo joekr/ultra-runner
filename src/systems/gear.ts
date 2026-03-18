@@ -13,7 +13,20 @@ export interface GearTemplate {
   durability: number;
   effects: Record<string, number>;
   description: string;
-  slot: "shoes" | "apparel";
+  slot: "shoes" | "apparel" | "accessories";
+}
+
+// ── Consumable Template Type ────────────────────────────────────────
+
+export interface ConsumableTemplate {
+  id: string;
+  name: string;
+  tier: number;
+  cost: number;
+  description: string;
+  effects: { fatigueReduction: number };
+  requiredNutritionIQ: number;  // minimum Nutrition IQ stat value to buy/use
+  stackable: boolean;
 }
 
 // ── Internal: parse JSON into typed templates ────────────────────────
@@ -30,9 +43,33 @@ const apparelTemplates: GearTemplate[] = gearData.apparel.map((a) => ({
   slot: "apparel" as const,
 }));
 
+const accessoryTemplates: GearTemplate[] = gearData.accessories.map((a) => ({
+  ...a,
+  effects: a.effects as unknown as Record<string, number>,
+  slot: "accessories" as const,
+}));
+
 const allTemplates = new Map<string, GearTemplate>();
-for (const t of [...shoeTemplates, ...apparelTemplates]) {
+for (const t of [...shoeTemplates, ...apparelTemplates, ...accessoryTemplates]) {
   allTemplates.set(t.id, t);
+}
+
+const consumableTemplates: ConsumableTemplate[] = (
+  (gearData as any).consumables ?? []
+).map((c: any) => ({
+  id: c.id,
+  name: c.name,
+  tier: c.tier,
+  cost: c.cost,
+  description: c.description,
+  effects: { fatigueReduction: c.effects.fatigueReduction },
+  requiredNutritionIQ: c.requiredNutritionIQ ?? 0,
+  stackable: c.stackable,
+}));
+
+const consumableMap = new Map<string, ConsumableTemplate>();
+for (const c of consumableTemplates) {
+  consumableMap.set(c.id, c);
 }
 
 // ── Template access ──────────────────────────────────────────────────
@@ -45,8 +82,20 @@ export function getApparelTemplates(): GearTemplate[] {
   return apparelTemplates;
 }
 
+export function getAccessoryTemplates(): GearTemplate[] {
+  return accessoryTemplates;
+}
+
 export function getGearTemplate(templateId: string): GearTemplate | undefined {
   return allTemplates.get(templateId);
+}
+
+export function getConsumableTemplates(): ConsumableTemplate[] {
+  return consumableTemplates;
+}
+
+export function getConsumableTemplate(id: string): ConsumableTemplate | undefined {
+  return consumableMap.get(id);
 }
 
 // ── Instance creation ────────────────────────────────────────────────
@@ -102,6 +151,27 @@ export function unequipApparel(gearId: string, inventory: InventoryState): Inven
   };
 }
 
+export function equipAccessory(gearId: string, inventory: InventoryState): InventoryState {
+  const item = inventory.accessories.find((a) => a.id === gearId);
+  if (!item) {
+    return inventory; // gear not found, no-op
+  }
+  if (inventory.equippedAccessories.includes(gearId)) {
+    return inventory; // already equipped
+  }
+  return {
+    ...inventory,
+    equippedAccessories: [...inventory.equippedAccessories, gearId],
+  };
+}
+
+export function unequipAccessory(gearId: string, inventory: InventoryState): InventoryState {
+  return {
+    ...inventory,
+    equippedAccessories: inventory.equippedAccessories.filter((id) => id !== gearId),
+  };
+}
+
 // ── Equipped bonuses ─────────────────────────────────────────────────
 
 export interface EquippedBonuses {
@@ -109,6 +179,11 @@ export interface EquippedBonuses {
   terrainBonuses: Record<string, number>;
   blistReduction: number;
   chafePenalty: number;
+  weatherProtection: number;
+  heatProtection: number;
+  recoveryBonus: number;
+  xpBonus: number;
+  nightBonus: number;
 }
 
 export function getEquippedBonuses(inventory: InventoryState): EquippedBonuses {
@@ -117,6 +192,11 @@ export function getEquippedBonuses(inventory: InventoryState): EquippedBonuses {
     terrainBonuses: {},
     blistReduction: 0,
     chafePenalty: 0,
+    weatherProtection: 0,
+    heatProtection: 0,
+    recoveryBonus: 0,
+    xpBonus: 0,
+    nightBonus: 0,
   };
 
   // Collect all equipped gear instances
@@ -140,6 +220,13 @@ export function getEquippedBonuses(inventory: InventoryState): EquippedBonuses {
     }
   }
 
+  for (const accessoryId of inventory.equippedAccessories) {
+    const item = inventory.accessories.find((a) => a.id === accessoryId);
+    if (item) {
+      equippedItems.push(item);
+    }
+  }
+
   // Aggregate effects from templates
   for (const gear of equippedItems) {
     const template = getGearTemplate(gear.templateId);
@@ -154,6 +241,21 @@ export function getEquippedBonuses(inventory: InventoryState): EquippedBonuses {
     }
     if (effects.chafePenalty) {
       result.chafePenalty += effects.chafePenalty;
+    }
+    if (effects.weatherProtection) {
+      result.weatherProtection += effects.weatherProtection;
+    }
+    if (effects.heatProtection) {
+      result.heatProtection += effects.heatProtection;
+    }
+    if (effects.recoveryBonus) {
+      result.recoveryBonus += effects.recoveryBonus;
+    }
+    if (effects.xpBonus) {
+      result.xpBonus += effects.xpBonus;
+    }
+    if (effects.nightBonus) {
+      result.nightBonus += effects.nightBonus;
     }
     // Terrain-specific bonuses: any key containing "terrain" or known terrain names
     if (effects.terrain) {

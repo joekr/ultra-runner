@@ -65,5 +65,36 @@
       "intervals": 20000
     },
     "recoveryPerRestDay": 15
+  },
+  "coach": {
+    "tiers": [
+      {
+        "tier": 1,
+        "name": "Local Club Coach",
+        "weeklyCost": 150,
+        "xpMultiplier": 1.0,
+        "fatigueReduction": 0.10,
+        "levelRequired": 1,
+        "description": "Knows the basics. Gets you on a real training plan."
+      },
+      {
+        "tier": 2,
+        "name": "Certified Running Coach",
+        "weeklyCost": 400,
+        "xpMultiplier": 1.0,
+        "fatigueReduction": 0.20,
+        "levelRequired": 5,
+        "description": "RRCA certified. Periodization, pacing, the works."
+      },
+      {
+        "tier": 3,
+        "name": "Elite Coach",
+        "weeklyCost": 800,
+        "xpMultiplier": 1.1,
+        "fatigueReduction": 0.30,
+        "levelRequired": 15,
+        "description": "Coached olympians. Now they'll coach you."
+      }
+    ]
   }
 }

@@ -148,11 +148,12 @@ describe("computeStatGains", () => {
       injuryRisk: 0.02,
     };
     const gains = computeStatGains("easy_run", cadence, 0, 100);
-    // baseXpPerTick=1.0, dt=100 → base=1.0, multiplier=1.0, fatigue=0 → penalty=1.0
-    // endurance: 1.0 * 0.6 = 0.6, recovery: 1.0 * 0.3 = 0.3, speed: 1.0 * 0.1 = 0.1
-    expect(gains.endurance).toBeCloseTo(0.6);
-    expect(gains.recovery).toBeCloseTo(0.3);
-    expect(gains.speed).toBeCloseTo(0.1);
+    // XP distributed by stat ratios: endurance 60%, recovery 30%, speed 10%
+    const total = (gains.endurance ?? 0) + (gains.recovery ?? 0) + (gains.speed ?? 0);
+    expect(total).toBeGreaterThan(0);
+    expect(gains.endurance).toBeCloseTo(total * 0.6);
+    expect(gains.recovery).toBeCloseTo(total * 0.3);
+    expect(gains.speed).toBeCloseTo(total * 0.1);
   });
 
   it("applies cadence multiplier", () => {
@@ -193,29 +194,43 @@ describe("computeStatGains", () => {
 describe("computeFatigue", () => {
   it("increases fatigue based on workout type", () => {
     const cadence: CadenceResult = { quality: "sweet_spot", multiplier: 1.0, injuryRisk: 0.02 };
-    const result = computeFatigue("easy_run", cadence, 0, 0, 100);
-    // baseFatiguePerTick=0.15, dt=100 → 0.15, no quality mod, recovery=0 → mod=1.0
-    expect(result).toBeCloseTo(0.15);
+    const easy = computeFatigue("easy_run", cadence, 0, 0, 100);
+    const hills = computeFatigue("hill_repeats", cadence, 0, 0, 100);
+    // Easy runs should generate much less fatigue than hill repeats
+    expect(easy).toBeGreaterThan(0);
+    expect(hills).toBeGreaterThan(easy * 3); // hills should be 3x+ more fatiguing
   });
 
-  it("applies hard quality multiplier of 1.5x", () => {
+  it("sweet spot reduces fatigue vs normal cadence", () => {
+    const sweet: CadenceResult = { quality: "sweet_spot", multiplier: 1.0, injuryRisk: 0.02 };
+    const easy: CadenceResult = { quality: "easy", multiplier: 0.6, injuryRisk: 0.01 };
+    const sweetResult = computeFatigue("easy_run", sweet, 0, 0, 100);
+    const easyResult = computeFatigue("easy_run", easy, 0, 0, 100);
+    // Sweet spot (0.7x) should produce less fatigue than easy (1.0x)
+    expect(sweetResult).toBeLessThan(easyResult);
+    expect(sweetResult).toBeCloseTo(easyResult * 0.7);
+  });
+
+  it("hard and overtrained increase fatigue significantly", () => {
+    const sweet: CadenceResult = { quality: "sweet_spot", multiplier: 1.0, injuryRisk: 0.02 };
     const hard: CadenceResult = { quality: "hard", multiplier: 0.7, injuryRisk: 0.08 };
-    const result = computeFatigue("easy_run", hard, 0, 0, 100);
-    expect(result).toBeCloseTo(0.15 * 1.5);
-  });
-
-  it("applies overtrained quality multiplier of 2.5x", () => {
     const over: CadenceResult = { quality: "overtrained", multiplier: 0.4, injuryRisk: 0.15 };
-    const result = computeFatigue("easy_run", over, 0, 0, 100);
-    expect(result).toBeCloseTo(0.15 * 2.5);
+    const sweetResult = computeFatigue("easy_run", sweet, 0, 0, 100);
+    const hardResult = computeFatigue("easy_run", hard, 0, 0, 100);
+    const overResult = computeFatigue("easy_run", over, 0, 0, 100);
+    // Hard (1.5x) should be more than double sweet spot (0.7x)
+    expect(hardResult).toBeGreaterThan(sweetResult * 2);
+    // Overtrained (2.5x) should be much worse
+    expect(overResult).toBeGreaterThan(hardResult);
+    expect(overResult).toBeGreaterThan(sweetResult * 3);
   });
 
   it("reduces fatigue gain with high recovery stat", () => {
     const cadence: CadenceResult = { quality: "sweet_spot", multiplier: 1.0, injuryRisk: 0.02 };
     const noRecovery = computeFatigue("easy_run", cadence, 0, 0, 100);
     const highRecovery = computeFatigue("easy_run", cadence, 0, 100, 100);
-    // recovery=100: mod = max(0.5, 1-100/200) = 0.5
-    expect(highRecovery).toBeCloseTo(noRecovery * 0.5);
+    // recovery=100: mod = max(0.7, 1-100/300) = 0.7
+    expect(highRecovery).toBeCloseTo(noRecovery * 0.7);
   });
 
   it("clamps fatigue to 100", () => {

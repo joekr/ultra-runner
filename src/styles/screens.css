@@ -160,14 +160,30 @@
   margin-bottom: var(--space-4);
 }
 
-.dashboard__money {
+.dashboard__stats-row {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-lg);
-  font-weight: 600;
-  color: var(--color-sage-dark);
+  justify-content: space-around;
   margin-bottom: var(--space-4);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--color-warm-gray-200);
+  border-bottom: 1px solid var(--color-warm-gray-200);
+}
+
+.dashboard__stat-item {
+  text-align: center;
+}
+
+.dashboard__stat-value {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.dashboard__stat-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .dashboard__race-results {
@@ -210,7 +226,7 @@
 }
 
 .training__day:hover {
-  border-color: var(--color-terracotta-light);
+  background: rgba(194, 112, 62, 0.03);
 }
 
 .training__day--today {
@@ -232,6 +248,29 @@
   color: var(--color-warm-gray-700);
   font-weight: 500;
   word-break: break-word;
+}
+
+.training__day-select {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-warm-gray-700);
+  background: var(--color-bg);
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: var(--radius-sm);
+  padding: 2px 4px;
+  width: 100%;
+  text-align: center;
+  cursor: pointer;
+  appearance: auto;
+}
+
+.training__day-select:focus {
+  outline: 2px solid var(--color-terracotta);
+  outline-offset: 1px;
+}
+
+.training__day--today .training__day-select {
+  border-color: var(--color-terracotta);
 }
 
 .training__mileage {
@@ -306,6 +345,22 @@
   color: var(--color-warm-gray-800);
 }
 
+.active-workout__mileage {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  text-align: center;
+  color: var(--color-sage);
+  margin-bottom: var(--space-1);
+}
+
+.active-workout__career-miles {
+  font-size: var(--text-xs);
+  text-align: center;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+}
+
 .active-workout__meters {
   display: flex;
   gap: var(--space-3);
@@ -347,10 +402,16 @@
 }
 
 .active-workout__cadence-label {
-  font-size: var(--text-xs);
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: 700;
   text-align: center;
   margin-bottom: var(--space-2);
+}
+
+.active-workout__streak-badge {
+  font-size: var(--text-xs);
+  font-weight: 800;
+  color: var(--color-sage);
 }
 
 .active-workout__tap-zone {
@@ -395,6 +456,19 @@
   background: rgba(192, 57, 43, 0.05);
 }
 
+.active-workout__tap-zone--pulse {
+  animation: sweet-spot-glow 0.8s ease-in-out infinite;
+}
+
+@keyframes sweet-spot-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(122, 139, 111, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(122, 139, 111, 0.6);
+  }
+}
+
 .active-workout__tap-text {
   font-size: var(--text-xl);
   color: var(--color-text-muted);
@@ -414,6 +488,55 @@
 @keyframes float-up {
   0% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-60px); }
+}
+
+.active-workout__tap-zone--walking {
+  border: 3px dashed var(--color-warm-gray-300);
+  background: var(--color-warm-gray-200);
+  cursor: default;
+  opacity: 0.7;
+}
+
+.active-workout__walking-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  pointer-events: none;
+}
+
+.active-workout__walking-sub {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.active-workout__walking-message {
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: #d4a017;
+  padding: var(--space-2);
+  margin-bottom: var(--space-2);
+  background: rgba(212, 160, 23, 0.08);
+  border-radius: var(--radius-md);
+}
+
+.active-workout__recovery-gear {
+  text-align: center;
+  font-size: var(--text-xs);
+  color: #8e44ad;
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.active-workout__bottom-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.active-workout__bottom-buttons > * {
+  flex: 1;
 }
 
 .active-workout__summary {

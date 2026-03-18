@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import { Button } from "../components/Button";
 import { startNewGame } from "../state/actions";
+import { RunnerIcon } from "../components/Icons";
 
 type Backstory = "couch_to_5k" | "former_athlete" | "hiker" | "stress_runner";
 
@@ -59,6 +60,9 @@ export function RunnerCreation() {
 
   return (
     <div class="creation">
+      <div style={{ textAlign: "center", marginBottom: "var(--space-2)" }}>
+        <RunnerIcon size={64} color="var(--color-terracotta)" />
+      </div>
       <h1 class="creation__title">Ultra Runner</h1>
       <p class="creation__subtitle">
         {step === 1 ? "What do they call you?" : "What's your story?"}

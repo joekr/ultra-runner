@@ -18,7 +18,50 @@ export type Migration = (state: any) => any;
  *   2: (state) => ({ ...state, version: 2, settings: { ...state.settings, tapFeedback: true } }),
  */
 export const migrations: Record<number, Migration> = {
-  // No migrations needed for v1
+  // v1 → v2: Add accessories support and equippedAccessories to inventory
+  2: (state: any) => ({
+    ...state,
+    version: 2,
+    inventory: {
+      ...state.inventory,
+      accessories: state.inventory.accessories ?? [],
+      equippedAccessories: state.inventory.equippedAccessories ?? [],
+    },
+  }),
+  // v2 → v3: Add consumables to inventory
+  3: (state: any) => ({
+    ...state,
+    version: 3,
+    inventory: {
+      ...state.inventory,
+      consumables: state.inventory.consumables ?? {},
+    },
+  }),
+  // v3 → v4: Add coach system
+  4: (state: any) => ({
+    ...state,
+    version: 4,
+    coach: state.coach ?? null,
+  }),
+  // v4 → v5: Add recovery tools usage tracking, fix weekDay drift
+  5: (state: any) => {
+    // Recalculate weekDay from gameDay to fix any drift
+    // Game starts at gameDay 1, weekDay 0 (Monday)
+    // So weekDay = (gameDay - 1) % 7
+    const correctedWeekDay = ((state.calendar?.gameDay ?? 1) - 1) % 7;
+    return {
+      ...state,
+      version: 5,
+      calendar: {
+        ...state.calendar,
+        weekDay: correctedWeekDay,
+      },
+      training: {
+        ...state.training,
+        recoveryToolsUsedOnDay: state.training.recoveryToolsUsedOnDay ?? {},
+      },
+    };
+  },
 };
 
 /**

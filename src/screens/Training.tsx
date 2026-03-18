@@ -9,22 +9,14 @@ import type { DayPlan } from "../types";
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-const WORKOUT_CYCLE: DayPlan["workout"][] = [
-  "easy_run",
-  "long_run",
-  "intervals",
-  "rest",
+const WORKOUT_OPTIONS: { value: DayPlan["workout"]; label: string }[] = [
+  { value: "easy_run", label: "Easy Run" },
+  { value: "long_run", label: "Long Run" },
+  { value: "intervals", label: "Intervals" },
+  { value: "tempo_run", label: "Tempo Run" },
+  { value: "hill_repeats", label: "Hill Repeats" },
+  { value: "rest", label: "Rest Day" },
 ];
-
-function workoutLabel(workout: string): string {
-  const map: Record<string, string> = {
-    easy_run: "Easy",
-    long_run: "Long",
-    intervals: "Speed",
-    rest: "Rest",
-  };
-  return map[workout] ?? workout;
-}
 
 export function Training() {
   const state = gameState.value;
@@ -39,13 +31,6 @@ export function Training() {
   );
   const overThreshold = isOverMileageThreshold(mileageIncrease);
 
-  function cycleDay(dayIndex: number) {
-    const current = plan[dayIndex].workout;
-    const currentIdx = WORKOUT_CYCLE.indexOf(current);
-    const next = WORKOUT_CYCLE[(currentIdx + 1) % WORKOUT_CYCLE.length];
-    updateTrainingPlan(dayIndex, next);
-  }
-
   const todayWorkout = plan[calendar.weekDay].workout;
 
   return (
@@ -57,12 +42,21 @@ export function Training() {
           <div
             key={i}
             class={`training__day ${i === calendar.weekDay ? "training__day--today" : ""}`}
-            onClick={() => cycleDay(i)}
           >
             <span class="training__day-label">{DAY_NAMES[i]}</span>
-            <span class="training__day-workout">
-              {workoutLabel(day.workout)}
-            </span>
+            <select
+              class="training__day-select"
+              value={day.workout}
+              onChange={(e) =>
+                updateTrainingPlan(i, (e.target as HTMLSelectElement).value as DayPlan["workout"])
+              }
+            >
+              {WORKOUT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
         ))}
       </div>

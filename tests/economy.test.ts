@@ -9,8 +9,11 @@ function makeInventory(overrides?: Partial<InventoryState>): InventoryState {
     money: 200,
     shoes: [],
     apparel: [],
+    accessories: [],
     equippedShoe: null,
     equippedApparel: [],
+    equippedAccessories: [],
+    consumables: {},
     ...overrides,
   };
 }

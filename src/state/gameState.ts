@@ -118,8 +118,11 @@ export const DEFAULT_INVENTORY: InventoryState = {
       maxDurability: 9999,
     },
   ],
+  accessories: [],
   equippedShoe: "shoe_basic_1",
   equippedApparel: ["apparel_cotton_tee_1", "apparel_split_shorts_1"],
+  equippedAccessories: [],
+  consumables: {},
 };
 
 // ── Create new game ───────────────────────────────────────────────────
@@ -181,6 +184,7 @@ export function createNewGame(name: string, backstory: Backstory): GameState {
       previousWeekMileage: 0,
       totalMiles: 0,
       streak: 0,
+      recoveryToolsUsedOnDay: {},
     },
 
     race: {
@@ -208,5 +212,7 @@ export function createNewGame(name: string, backstory: Backstory): GameState {
       soundEnabled: true,
       tapFeedback: true,
     },
+
+    coach: null,
   };
 }

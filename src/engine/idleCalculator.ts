@@ -16,6 +16,7 @@ import type {
 import balance from "../data/balance.json";
 import workouts from "../data/workouts.json";
 import { GAME_HOURS_PER_REAL_HOUR } from "./clock";
+import { fatigueCurveMultiplier, dailyPassiveFatigueRecovery } from "../systems/stats";
 
 const MAX_IDLE_HOURS = balance.idle.maxHours;
 const IDLE_EFFICIENCY = balance.idle.efficiency;
@@ -107,8 +108,9 @@ export function computeIdleGains(
           statGains[key] = (statGains[key] ?? 0) + effectiveXp * weight;
         }
 
-        // Add fatigue from workout (use baseFatiguePerTick as a per-day proxy)
-        fatigueChange += workoutData.baseFatiguePerTick * IDLE_EFFICIENCY;
+        // Add fatigue from workout, reduced by fitness level
+        const fitMult = fatigueCurveMultiplier(state.stats, state.runner.level);
+        fatigueChange += workoutData.baseFatiguePerTick * IDLE_EFFICIENCY * fitMult;
 
         workoutsCompleted.push({
           day: dayIndex,
@@ -125,6 +127,9 @@ export function computeIdleGains(
         originalPlan: plannedWorkout,
       } as IdleRestSubstitution);
     }
+
+    // Every day gets passive recovery (sleeping, eating, normal life)
+    fatigueChange -= dailyPassiveFatigueRecovery(state.stats, state.runner.level);
   }
 
   return {
