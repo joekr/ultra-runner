@@ -39,7 +39,7 @@ const shoeTemplates: GearTemplate[] = gearData.shoes.map((s) => ({
 
 const apparelTemplates: GearTemplate[] = gearData.apparel.map((a) => ({
   ...a,
-  effects: a.effects as Record<string, number>,
+  effects: a.effects as unknown as Record<string, number>,
   slot: "apparel" as const,
 }));
 

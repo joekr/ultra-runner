@@ -2,7 +2,6 @@
 
 import type { InventoryState } from "../types";
 import { createGearInstance, getGearTemplate, getConsumableTemplate } from "./gear";
-import balanceData from "../data/balance.json";
 
 // ── Affordability check ──────────────────────────────────────────────
 
@@ -94,14 +93,23 @@ export function buyConsumable(
 
 const BASE_PRIZES = [50, 100, 200, 500]; // tiers 1-4
 
-export function racePrize(tier: number, positionPercentile: number): number {
+export function racePrize(tier: number, position: number, _totalRunners: number): number {
   const basePrize = BASE_PRIZES[tier - 1] ?? 0;
-  const multipliers = balanceData.economy.prizeMultipliers;
+  const pct = position / _totalRunners;
 
-  if (positionPercentile <= 0.1) return basePrize * multipliers.top10pct;
-  if (positionPercentile <= 0.25) return basePrize * multipliers.top25pct;
-  if (positionPercentile <= 0.5) return basePrize * multipliers.top50pct;
-  return Math.floor(basePrize * multipliers.other);
+  // Podium finishes get bonus multipliers
+  // 1st place: 2x    (5K: $100, Marathon: $1000)
+  // 2nd place: 1.5x  (5K: $75, Marathon: $750)
+  // 3rd place: 1.25x (5K: $62, Marathon: $625)
+  // Top 50%:   1x    (5K: $50, Marathon: $500)
+  // Top 75%:   0.4x  (5K: $20, Marathon: $200)
+  // Bottom:    0.1x  (5K: $5, Marathon: $50)
+  if (position === 1) return Math.floor(basePrize * 2);
+  if (position === 2) return Math.floor(basePrize * 1.5);
+  if (position === 3) return Math.floor(basePrize * 1.25);
+  if (pct <= 0.5) return Math.floor(basePrize * 1);
+  if (pct <= 0.75) return Math.floor(basePrize * 0.4);
+  return Math.floor(basePrize * 0.1);
 }
 
 // ── Race entry fee ───────────────────────────────────────────────────

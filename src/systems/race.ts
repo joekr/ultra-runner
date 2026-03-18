@@ -6,6 +6,7 @@ import { createRaceRng, mulberry32, hashString } from "../engine/prng";
 import racesData from "../data/races.json";
 import eventsData from "../data/events.json";
 import balanceData from "../data/balance.json";
+import { racePrize } from "./economy";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -495,20 +496,8 @@ export function completeRace(
     xpEarned += balanceData.progression.xpPerPR;
   }
 
-  // Money earned based on position percentile
-  const positionPct = position / totalRunners;
-  const prizeMultipliers = balanceData.economy.prizeMultipliers;
-  let multiplier: number;
-  if (positionPct <= 0.1) {
-    multiplier = prizeMultipliers.top10pct;
-  } else if (positionPct <= 0.25) {
-    multiplier = prizeMultipliers.top25pct;
-  } else if (positionPct <= 0.5) {
-    multiplier = prizeMultipliers.top50pct;
-  } else {
-    multiplier = prizeMultipliers.other;
-  }
-  const moneyEarned = Math.floor(raceDef.basePrize * multiplier);
+  // Money earned based on position (podium gets bonuses)
+  const moneyEarned = racePrize(raceDef.tier, position, totalRunners);
 
   return {
     finishTime,

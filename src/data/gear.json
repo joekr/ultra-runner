@@ -75,8 +75,8 @@
       "tier": 1,
       "cost": 45,
       "durability": 9999,
-      "effects": {},
-      "description": "Moisture-wicking. The first upgrade every runner makes."
+      "effects": { "fatigueReduction": 0.03 },
+      "description": "Moisture-wicking. The first upgrade every runner makes. Keeps you cooler, run longer."
     },
     {
       "id": "split_shorts",
@@ -84,8 +84,8 @@
       "tier": 1,
       "cost": 40,
       "durability": 9999,
-      "effects": {},
-      "description": "Built-in liner. No underwear required. Welcome to running."
+      "effects": { "speedBonus": 0.01, "fatigueReduction": 0.02 },
+      "description": "Built-in liner. No underwear required. Lighter and faster than anything in your closet."
     },
     {
       "id": "running_socks",

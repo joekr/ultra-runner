@@ -32,6 +32,7 @@ function formatEffectName(key: string): string {
     roadPenalty: "Road Penalty",
     blistReduction: "Blister Resist",
     chafePenalty: "Chafe Penalty",
+    fatigueReduction: "Fatigue Resist",
     weatherProtection: "Weather Protect",
     heatProtection: "Heat Protect",
     recoveryBonus: "Recovery",
@@ -59,49 +60,57 @@ export function Shop() {
   const consumableTemps = getConsumableTemplates();
 
   function handleBuy(templateId: string) {
-    if (!state) return;
-    const result = buyGear(templateId, state.inventory);
+    const current = gameState.value;
+    if (!current) return;
+    const result = buyGear(templateId, current.inventory);
     if (result.success) {
       updateGameState({ inventory: result.inventory });
     }
   }
 
   function handleBuyConsumable(templateId: string, quantity: number) {
-    if (!state) return;
-    const result = buyConsumable(templateId, quantity, state.inventory);
+    const current = gameState.value;
+    if (!current) return;
+    const result = buyConsumable(templateId, quantity, current.inventory);
     if (result.success) {
       updateGameState({ inventory: result.inventory });
     }
   }
 
   function handleEquipShoe(gearId: string) {
-    if (!state) return;
-    updateGameState({ inventory: equipShoe(gearId, state.inventory) });
+    const current = gameState.value;
+    if (!current) return;
+    updateGameState({ inventory: equipShoe(gearId, current.inventory) });
   }
 
   function handleUnequipShoe() {
-    if (!state) return;
-    updateGameState({ inventory: unequipShoe(state.inventory) });
+    const current = gameState.value;
+    if (!current) return;
+    updateGameState({ inventory: unequipShoe(current.inventory) });
   }
 
   function handleEquipApparel(gearId: string) {
-    if (!state) return;
-    updateGameState({ inventory: equipApparel(gearId, state.inventory) });
+    const current = gameState.value;
+    if (!current) return;
+    updateGameState({ inventory: equipApparel(gearId, current.inventory) });
   }
 
   function handleUnequipApparel(gearId: string) {
-    if (!state) return;
-    updateGameState({ inventory: unequipApparel(gearId, state.inventory) });
+    const current = gameState.value;
+    if (!current) return;
+    updateGameState({ inventory: unequipApparel(gearId, current.inventory) });
   }
 
   function handleEquipAccessory(gearId: string) {
-    if (!state) return;
-    updateGameState({ inventory: equipAccessory(gearId, state.inventory) });
+    const current = gameState.value;
+    if (!current) return;
+    updateGameState({ inventory: equipAccessory(gearId, current.inventory) });
   }
 
   function handleUnequipAccessory(gearId: string) {
-    if (!state) return;
-    updateGameState({ inventory: unequipAccessory(gearId, state.inventory) });
+    const current = gameState.value;
+    if (!current) return;
+    updateGameState({ inventory: unequipAccessory(gearId, current.inventory) });
   }
 
   const templates =
@@ -271,7 +280,8 @@ export function Shop() {
               );
               // Check if already owned (for non-consumable one-time items like accessories)
               const alreadyOwned = ownedItems.some((item) => item.templateId === tmpl.id);
-              const isOneTimePurchase = tmpl.slot === "accessories";
+              // Shoes can be re-bought (they wear out). Apparel and accessories are one-time.
+              const isOneTimePurchase = tmpl.slot === "accessories" || tmpl.slot === "apparel";
               return (
                 <div key={tmpl.id} class="card shop__item" style={{ display: "flex", flexDirection: "row", gap: "var(--space-3)" }}>
                   <div style={{ flexShrink: 0, display: "flex", alignItems: "flex-start", paddingTop: "var(--space-1)" }}>

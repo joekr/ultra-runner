@@ -23,6 +23,21 @@ import { dailyPassiveFatigueRecovery, restDayFatigueRecovery, describeLevelUp } 
 
 // ── Navigation ────────────────────────────────────────────────────────
 
+// ── Day Advancement Helper ────────────────────────────────────────────
+
+const SEASONS: Array<"spring" | "summer" | "fall" | "winter"> = [
+  "spring", "summer", "fall", "winter",
+];
+
+function advanceDay(calendar: GameState["calendar"]) {
+  const newWeekDay = (calendar.weekDay + 1) % 7;
+  const newGameDay = calendar.gameDay + 1;
+  const newSeason = SEASONS[Math.floor(newGameDay / 28) % 4];
+  return { weekDay: newWeekDay, gameDay: newGameDay, season: newSeason };
+}
+
+// ── Navigation ────────────────────────────────────────────────────────
+
 export function navigateTo(screen: Screen): void {
   currentScreen.value = screen;
 }
@@ -107,12 +122,7 @@ export function endWorkout(): WorkoutCompletionInfo | null {
   }
 
   // Advance the game day — one workout = one day
-  const newWeekDay = (state.calendar.weekDay + 1) % 7;
-  const newGameDay = state.calendar.gameDay + 1;
-  const SEASONS: Array<"spring" | "summer" | "fall" | "winter"> = [
-    "spring", "summer", "fall", "winter",
-  ];
-  const newSeason = SEASONS[Math.floor(newGameDay / 28) % 4];
+  const { weekDay: newWeekDay, gameDay: newGameDay, season: newSeason } = advanceDay(state.calendar);
 
   // Update weekly mileage (reset on new week)
   const workoutMiles = workout.workoutType !== "rest"
@@ -241,13 +251,7 @@ export function takeRestDay(): void {
   // Rest day recovery — significantly more than passive daily recovery
   const recoveryAmount = restDayFatigueRecovery(state.stats);
 
-  const newWeekDay = (state.calendar.weekDay + 1) % 7;
-  const newGameDay = state.calendar.gameDay + 1;
-  const SEASONS: Array<"spring" | "summer" | "fall" | "winter"> = [
-    "spring", "summer", "fall", "winter",
-  ];
-  const newSeason = SEASONS[Math.floor(newGameDay / 28) % 4];
-
+  const { weekDay: newWeekDay, gameDay: newGameDay, season: newSeason } = advanceDay(state.calendar);
   const isNewWeek = newWeekDay === 0;
 
   // Heal injuries on rest days
@@ -426,8 +430,10 @@ export function completeRaceAction(): RaceCompletionInfo | null {
   // Post-race recovery fatigue
   const postRaceFatigue = POST_RACE_FATIGUE[tier] ?? 20;
 
+  // Advance day — race day is over, move to Sunday
+  const { weekDay: newWeekDay, gameDay: newGameDay, season: newSeason } = advanceDay(state.calendar);
+
   // Race experience trains Nutrition IQ
-  // Longer races teach more about fueling: 5K=20xp, 10K=40, Half=80, Marathon=150
   const nutritionXpByTier = [20, 40, 80, 150];
   const nutritionXpGain = nutritionXpByTier[(tier - 1)] ?? 20;
   const updatedStats = { ...state.stats };
@@ -448,6 +454,12 @@ export function completeRaceAction(): RaceCompletionInfo | null {
     condition: {
       ...state.condition,
       fatigue: Math.min(100, state.condition.fatigue + postRaceFatigue),
+    },
+    calendar: {
+      ...state.calendar,
+      gameDay: newGameDay,
+      weekDay: newWeekDay,
+      season: newSeason,
     },
     history: {
       ...state.history,
@@ -519,6 +531,9 @@ export function dnfRaceAction(reason: string): DNFCompletionInfo | null {
   // Post-race fatigue (reduced for DNF since race wasn't completed)
   const postRaceFatigue = Math.floor((POST_RACE_FATIGUE[tier] ?? 20) * 0.6);
 
+  // Advance day — race day is over
+  const { weekDay: newWeekDay, gameDay: newGameDay, season: newSeason } = advanceDay(state.calendar);
+
   gameState.value = {
     ...state,
     runner: {
@@ -531,6 +546,12 @@ export function dnfRaceAction(reason: string): DNFCompletionInfo | null {
     condition: {
       ...state.condition,
       fatigue: Math.min(100, state.condition.fatigue + postRaceFatigue),
+    },
+    calendar: {
+      ...state.calendar,
+      gameDay: newGameDay,
+      weekDay: newWeekDay,
+      season: newSeason,
     },
     history: {
       ...state.history,

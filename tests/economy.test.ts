@@ -92,76 +92,60 @@ describe("buyGear", () => {
 // ── racePrize ────────────────────────────────────────────────────────
 
 describe("racePrize", () => {
+  // racePrize(tier, position, totalRunners)
   // Tier 1 (5K): base = 50
-  it("tier 1 top 10% = 150", () => {
-    expect(racePrize(1, 0.05)).toBe(150);
+
+  it("1st place gets 2x base", () => {
+    expect(racePrize(1, 1, 100)).toBe(100); // 50 * 2
   });
 
-  it("tier 1 exactly 10% = 150", () => {
-    expect(racePrize(1, 0.1)).toBe(150);
+  it("2nd place gets 1.5x base", () => {
+    expect(racePrize(1, 2, 100)).toBe(75); // 50 * 1.5
   });
 
-  it("tier 1 top 25% = 100", () => {
-    expect(racePrize(1, 0.2)).toBe(100);
+  it("3rd place gets 1.25x base", () => {
+    expect(racePrize(1, 3, 100)).toBe(62); // floor(50 * 1.25)
   });
 
-  it("tier 1 exactly 25% = 100", () => {
-    expect(racePrize(1, 0.25)).toBe(100);
+  it("top 50% gets 1x base", () => {
+    expect(racePrize(1, 40, 100)).toBe(50); // 50 * 1
   });
 
-  it("tier 1 top 50% = 50", () => {
-    expect(racePrize(1, 0.4)).toBe(50);
+  it("top 75% gets 0.4x base", () => {
+    expect(racePrize(1, 60, 100)).toBe(20); // 50 * 0.4
   });
 
-  it("tier 1 exactly 50% = 50", () => {
-    expect(racePrize(1, 0.5)).toBe(50);
-  });
-
-  it("tier 1 below 50% = 12 (floor of 50 * 0.25)", () => {
-    expect(racePrize(1, 0.8)).toBe(12);
-  });
-
-  // Tier 2 (10K): base = 100
-  it("tier 2 top 10% = 300", () => {
-    expect(racePrize(2, 0.05)).toBe(300);
-  });
-
-  it("tier 2 top 25% = 200", () => {
-    expect(racePrize(2, 0.2)).toBe(200);
-  });
-
-  it("tier 2 below 50% = 25", () => {
-    expect(racePrize(2, 0.9)).toBe(25);
-  });
-
-  // Tier 3 (Half Marathon): base = 200
-  it("tier 3 top 10% = 600", () => {
-    expect(racePrize(3, 0.08)).toBe(600);
-  });
-
-  it("tier 3 top 50% = 200", () => {
-    expect(racePrize(3, 0.5)).toBe(200);
-  });
-
-  it("tier 3 below 50% = 50", () => {
-    expect(racePrize(3, 0.6)).toBe(50);
+  it("bottom 25% gets 0.1x base", () => {
+    expect(racePrize(1, 90, 100)).toBe(5); // 50 * 0.1
   });
 
   // Tier 4 (Marathon): base = 500
-  it("tier 4 top 10% = 1500", () => {
-    expect(racePrize(4, 0.01)).toBe(1500);
+  it("marathon 1st place = 1000", () => {
+    expect(racePrize(4, 1, 500)).toBe(1000); // 500 * 2
   });
 
-  it("tier 4 top 25% = 1000", () => {
-    expect(racePrize(4, 0.15)).toBe(1000);
+  it("marathon 2nd place = 750", () => {
+    expect(racePrize(4, 2, 500)).toBe(750); // 500 * 1.5
   });
 
-  it("tier 4 top 50% = 500", () => {
-    expect(racePrize(4, 0.35)).toBe(500);
+  it("marathon 3rd place = 625", () => {
+    expect(racePrize(4, 3, 500)).toBe(625); // floor(500 * 1.25)
   });
 
-  it("tier 4 below 50% = 125", () => {
-    expect(racePrize(4, 0.75)).toBe(125);
+  it("marathon mid-pack = 500", () => {
+    expect(racePrize(4, 200, 500)).toBe(500); // 500 * 1
+  });
+
+  it("marathon back of pack = 50", () => {
+    expect(racePrize(4, 450, 500)).toBe(50); // 500 * 0.1
+  });
+
+  it("podium pays significantly more than back of pack", () => {
+    const first = racePrize(4, 1, 500);
+    const last = racePrize(4, 490, 500);
+    expect(first).toBe(1000);
+    expect(last).toBe(50);
+    expect(first / last).toBe(20);
   });
 });
 
