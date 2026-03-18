@@ -62,6 +62,17 @@ export const migrations: Record<number, Migration> = {
       },
     };
   },
+  // v5 → v6: Add earning flags (firstUltraComplete, firstMarathonComplete, sponsoredRunTier)
+  6: (state: any) => ({
+    ...state,
+    version: 6,
+    flags: {
+      ...state.flags,
+      firstUltraComplete: state.flags.firstUltraComplete ?? false,
+      firstMarathonComplete: state.flags.firstMarathonComplete ?? false,
+      sponsoredRunTier: state.flags.sponsoredRunTier ?? 0,
+    },
+  }),
 };
 
 /**

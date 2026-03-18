@@ -15,7 +15,7 @@ import { calculateInjuryRisk, rollInjury, tickInjuryRecovery, escalateInjury } f
 import { initializeRace, completeRace, createDNF, getRaceById } from "../systems/race";
 import type { RaceResult, DNFResult } from "../systems/race";
 import { awardWorkoutXP, awardRaceXP, calculateLevel, xpToNextLevel, checkUnlocks } from "../systems/progression";
-import { getShoeCondition, degradeShoe } from "../systems/gear";
+import { getShoeCondition, degradeShoe, getGearTemplate } from "../systems/gear";
 import { mulberry32 } from "../engine/prng";
 import { checkAchievements, getAchievementById } from "../systems/achievements";
 import { pushAchievementNotifications } from "./achievementNotifications";
@@ -223,6 +223,19 @@ export function endWorkout(): WorkoutCompletionInfo | null {
     };
   }
 
+  // Sponsored training run payout
+  const sponsoredTier = state.flags.sponsoredRunTier;
+  const sponsoredPayout = sponsoredTier >= 1 ? getSponsoredRunPayout(sponsoredTier) : 0;
+  if (sponsoredPayout > 0) {
+    updatedState = {
+      ...updatedState,
+      inventory: {
+        ...updatedState.inventory,
+        money: updatedState.inventory.money + sponsoredPayout,
+      },
+    };
+  }
+
   // Process weekly coach fee on new week
   const { newState: stateAfterCoach, message: coachMessage } = processCoachWeeklyFee(updatedState, isNewWeek);
   updatedState = stateAfterCoach;
@@ -286,6 +299,198 @@ export function takeRestDay(): void {
   gameState.value = updatedState;
 
   save(gameState.value);
+}
+
+// ── Volunteer ────────────────────────────────────────────────────────
+
+export function getVolunteerPay(level: number): number {
+  return Math.min(50, 30 + (level - 1) * 5);
+}
+
+export function volunteerAtRace(): void {
+  const state = gameState.value;
+  if (!state) return;
+
+  const pay = getVolunteerPay(state.runner.level);
+
+  // Half of rest day recovery (you're on your feet but not running)
+  const recoveryAmount = Math.floor(restDayFatigueRecovery(state.stats) / 2);
+
+  const { weekDay: newWeekDay, gameDay: newGameDay, season: newSeason } = advanceDay(state.calendar);
+  const isNewWeek = newWeekDay === 0;
+
+  // Heal injuries like a rest day
+  const healedInjuries = tickInjuryRecovery(state.injuries, true);
+
+  // Award 25 XP
+  const newTotalXp = state.runner.xp + 25;
+  const newLevel = calculateLevel(newTotalXp);
+  const levelInfo = xpToNextLevel(newTotalXp);
+
+  let updatedState: GameState = {
+    ...state,
+    runner: {
+      ...state.runner,
+      xp: newTotalXp,
+      level: newLevel,
+      xpToNextLevel: levelInfo.needed,
+    },
+    condition: {
+      ...state.condition,
+      fatigue: Math.max(0, state.condition.fatigue - recoveryAmount),
+    },
+    injuries: healedInjuries,
+    calendar: {
+      ...state.calendar,
+      gameDay: newGameDay,
+      weekDay: newWeekDay,
+      season: newSeason,
+    },
+    training: {
+      ...state.training,
+      weeklyMileage: isNewWeek ? 0 : state.training.weeklyMileage,
+      previousWeekMileage: isNewWeek
+        ? state.training.weeklyMileage
+        : state.training.previousWeekMileage,
+    },
+    inventory: {
+      ...state.inventory,
+      money: state.inventory.money + pay,
+    },
+  };
+
+  // Process weekly coach fee on new week
+  const { newState: stateAfterCoach } = processCoachWeeklyFee(updatedState, isNewWeek);
+  updatedState = stateAfterCoach;
+
+  gameState.value = updatedState;
+  save(gameState.value);
+}
+
+// ── Sell Gear ────────────────────────────────────────────────────────
+
+export function getSellPrice(templateId: string): number {
+  const template = getGearTemplate(templateId);
+  if (!template) return 0;
+  return Math.floor(template.cost / 2);
+}
+
+export function sellGear(gearId: string, slot: "shoes" | "apparel" | "accessories"): void {
+  const state = gameState.value;
+  if (!state) return;
+
+  const items = state.inventory[slot];
+  const item = items.find((g) => g.id === gearId);
+  if (!item) return;
+
+  // Cannot sell if it's the last pair of shoes
+  if (slot === "shoes" && state.inventory.shoes.length <= 1) return;
+
+  const sellPrice = getSellPrice(item.templateId);
+
+  // If it was equipped, unequip it first
+  let newInventory = { ...state.inventory };
+  if (slot === "shoes" && newInventory.equippedShoe === gearId) {
+    newInventory.equippedShoe = null;
+  } else if (slot === "apparel") {
+    newInventory.equippedApparel = newInventory.equippedApparel.filter((id) => id !== gearId);
+  } else if (slot === "accessories") {
+    newInventory.equippedAccessories = newInventory.equippedAccessories.filter((id) => id !== gearId);
+  }
+
+  // Remove from inventory
+  newInventory = {
+    ...newInventory,
+    [slot]: items.filter((g) => g.id !== gearId),
+    money: newInventory.money + sellPrice,
+  };
+
+  gameState.value = {
+    ...state,
+    inventory: newInventory,
+  };
+
+  save(gameState.value);
+}
+
+// ── Coach Others ─────────────────────────────────────────────────────
+
+export function getCoachOthersPay(level: number): number {
+  return Math.min(200, 100 + (level - 1) * 5);
+}
+
+export function coachOthers(): void {
+  const state = gameState.value;
+  if (!state) return;
+  if (!state.flags.firstUltraComplete) return;
+
+  const pay = getCoachOthersPay(state.runner.level);
+
+  // Same recovery as volunteering (half of rest day)
+  const recoveryAmount = Math.floor(restDayFatigueRecovery(state.stats) / 2);
+
+  const { weekDay: newWeekDay, gameDay: newGameDay, season: newSeason } = advanceDay(state.calendar);
+  const isNewWeek = newWeekDay === 0;
+
+  // Heal injuries like a rest day
+  const healedInjuries = tickInjuryRecovery(state.injuries, true);
+
+  // Award 50 XP
+  const newTotalXp = state.runner.xp + 50;
+  const newLevel = calculateLevel(newTotalXp);
+  const levelInfo = xpToNextLevel(newTotalXp);
+
+  let updatedState: GameState = {
+    ...state,
+    runner: {
+      ...state.runner,
+      xp: newTotalXp,
+      level: newLevel,
+      xpToNextLevel: levelInfo.needed,
+    },
+    condition: {
+      ...state.condition,
+      fatigue: Math.max(0, state.condition.fatigue - recoveryAmount),
+    },
+    injuries: healedInjuries,
+    calendar: {
+      ...state.calendar,
+      gameDay: newGameDay,
+      weekDay: newWeekDay,
+      season: newSeason,
+    },
+    training: {
+      ...state.training,
+      weeklyMileage: isNewWeek ? 0 : state.training.weeklyMileage,
+      previousWeekMileage: isNewWeek
+        ? state.training.weeklyMileage
+        : state.training.previousWeekMileage,
+    },
+    inventory: {
+      ...state.inventory,
+      money: state.inventory.money + pay,
+    },
+  };
+
+  // Process weekly coach fee on new week
+  const { newState: stateAfterCoach } = processCoachWeeklyFee(updatedState, isNewWeek);
+  updatedState = stateAfterCoach;
+
+  gameState.value = updatedState;
+  save(gameState.value);
+}
+
+// ── Sponsored Training Run ───────────────────────────────────────────
+
+const SPONSORED_RUN_PAYOUTS: Record<number, number> = {
+  1: 25,
+  2: 50,
+  3: 75,
+  4: 100,
+};
+
+export function getSponsoredRunPayout(tier: number): number {
+  return SPONSORED_RUN_PAYOUTS[tier] ?? 0;
 }
 
 // ── Start Race ────────────────────────────────────────────────────────
@@ -474,6 +679,14 @@ export function completeRaceAction(): RaceCompletionInfo | null {
     flags: {
       ...state.flags,
       firstRaceComplete: true,
+      firstMarathonComplete: state.flags.firstMarathonComplete || (raceDef ? raceDef.distance >= 26.2 : false),
+      firstUltraComplete: state.flags.firstUltraComplete || (raceDef ? raceDef.distance >= 31 : false),
+      sponsoredRunTier: Math.max(
+        state.flags.sponsoredRunTier,
+        raceDef && raceDef.distance >= 31 ? 2
+          : raceDef && raceDef.distance >= 26.2 ? 1
+          : state.flags.sponsoredRunTier,
+      ),
       unlockedDistances: newUnlocks.length > 0
         ? [...state.flags.unlockedDistances, ...newUnlocks]
         : state.flags.unlockedDistances,

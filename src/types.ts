@@ -1,6 +1,6 @@
 // types.ts — All shared TypeScript interfaces/types for Ultra Runner Simulator
 
-export const CURRENT_SCHEMA_VERSION = 5;
+export const CURRENT_SCHEMA_VERSION = 6;
 
 // ── Top-Level Game State ──────────────────────────────────────────────
 
@@ -202,6 +202,9 @@ export interface FlagState {
   tutorialComplete: boolean;
   firstRaceComplete: boolean;
   firstDNF: boolean;
+  firstUltraComplete: boolean;
+  firstMarathonComplete: boolean;
+  sponsoredRunTier: number; // 0=locked, 1=marathon, 2=50k, 3=50mi, 4=100mi
   unlockedDistances: string[];
 }
 

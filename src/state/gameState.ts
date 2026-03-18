@@ -205,6 +205,9 @@ export function createNewGame(name: string, backstory: Backstory): GameState {
       tutorialComplete: false,
       firstRaceComplete: false,
       firstDNF: false,
+      firstUltraComplete: false,
+      firstMarathonComplete: false,
+      sponsoredRunTier: 0,
       unlockedDistances: ["5k"],
     },
 

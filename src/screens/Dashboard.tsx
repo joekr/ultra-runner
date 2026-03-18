@@ -1,5 +1,5 @@
 import { gameState, fitnessLevel, statValues } from "../state/gameState";
-import { startWorkout, takeRestDay, startRace, navigateTo, updateGameState } from "../state/actions";
+import { startWorkout, takeRestDay, startRace, navigateTo, updateGameState, volunteerAtRace, getVolunteerPay, coachOthers, getCoachOthersPay, getSponsoredRunPayout } from "../state/actions";
 import { GaugeCircle } from "../components/GaugeCircle";
 import { StatBar } from "../components/StatBar";
 import { Button } from "../components/Button";
@@ -278,7 +278,11 @@ export function Dashboard() {
           {todayPlan.workout !== "rest" ? (
             <>
               <Button
-                label={!trainingSafety.safe ? "Train Anyway (Risky!)" : "Start Training"}
+                label={!trainingSafety.safe
+                  ? "Train Anyway (Risky!)"
+                  : state.flags.sponsoredRunTier >= 1
+                    ? `Start Training (+$${getSponsoredRunPayout(state.flags.sponsoredRunTier)} sponsored)`
+                    : "Start Training"}
                 onClick={() => startWorkout(todayPlan.workout)}
                 variant={!trainingSafety.safe ? "danger" : "primary"}
               />
@@ -299,6 +303,42 @@ export function Dashboard() {
           )}
         </div>
       </div>
+
+      {calendar.weekDay === 5 && !isRaceDay && (
+        <div class="dashboard__section">
+          <div class="card">
+            <div style={{ marginBottom: "var(--space-1)" }}>
+              <strong>Volunteer at a Race</strong>
+            </div>
+            <div style={{ fontSize: "var(--text-sm)", color: "var(--color-warm-gray-600)", marginBottom: "var(--space-3)" }}>
+              Spend Saturday helping at an aid station. Earn $30-50.
+            </div>
+            <Button
+              label={`Volunteer ($${getVolunteerPay(runner.level)})`}
+              onClick={volunteerAtRace}
+              variant="secondary"
+            />
+          </div>
+        </div>
+      )}
+
+      {state.flags.firstUltraComplete && (
+        <div class="dashboard__section">
+          <div class="card">
+            <div style={{ marginBottom: "var(--space-1)" }}>
+              <strong>Coach Others</strong>
+            </div>
+            <div style={{ fontSize: "var(--text-sm)", color: "var(--color-warm-gray-600)", marginBottom: "var(--space-3)" }}>
+              Share your experience with new runners. Earn $100-200/day.
+            </div>
+            <Button
+              label={`Coach ($${getCoachOthersPay(runner.level)})`}
+              onClick={coachOthers}
+              variant="secondary"
+            />
+          </div>
+        </div>
+      )}
 
       <div class="dashboard__section">
         <div class="card">

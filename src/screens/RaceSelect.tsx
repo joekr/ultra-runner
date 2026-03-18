@@ -77,7 +77,11 @@ export function RaceSelect() {
               <div class="race-card__description">{race.description}</div>
               <div class="race-card__footer">
                 <div>
-                  <div class="race-card__cost">Entry: ${race.entryFee}</div>
+                  <div class="race-card__cost">
+                    Entry: {race.entryFee === 0
+                      ? <span style={{ color: "var(--color-sage)", fontWeight: 700 }}>FREE</span>
+                      : `$${race.entryFee}`}
+                  </div>
                   <div class="race-card__prize">
                     Prize: ${race.basePrize}+
                   </div>

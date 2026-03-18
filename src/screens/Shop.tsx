@@ -1,6 +1,6 @@
 import { useState } from "preact/hooks";
 import { gameState, statValues } from "../state/gameState";
-import { updateGameState } from "../state/actions";
+import { updateGameState, sellGear, getSellPrice } from "../state/actions";
 import { Button } from "../components/Button";
 import { ProgressBar } from "../components/ProgressBar";
 import {
@@ -396,7 +396,7 @@ export function Shop() {
                           </div>
                         )}
                       </div>
-                      <div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
                         {equipped ? (
                           <Button
                             label="Unequip"
@@ -410,6 +410,18 @@ export function Shop() {
                             variant="secondary"
                           />
                         )}
+                        {(() => {
+                          const isOnlyShoe = tab === "shoes" && inventory.shoes.length <= 1;
+                          const price = getSellPrice(item.templateId);
+                          if (isOnlyShoe || price <= 0) return null;
+                          return (
+                            <Button
+                              label={`Sell ($${price})`}
+                              onClick={() => sellGear(item.id, tab as "shoes" | "apparel" | "accessories")}
+                              variant="danger"
+                            />
+                          );
+                        })()}
                       </div>
                     </div>
                   );
