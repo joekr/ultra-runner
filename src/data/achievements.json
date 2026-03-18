@@ -1,0 +1,242 @@
+[
+  {
+    "id": "first_5k",
+    "name": "First 5K",
+    "description": "You crossed your first finish line. Everyone remembers their first.",
+    "category": "race",
+    "conditionType": "race_finish",
+    "conditionValue": { "tier": 1 }
+  },
+  {
+    "id": "first_10k",
+    "name": "First 10K",
+    "description": "Double the distance, double the accomplishment. You're a real runner now.",
+    "category": "race",
+    "conditionType": "race_finish",
+    "conditionValue": { "tier": 2 }
+  },
+  {
+    "id": "first_half_marathon",
+    "name": "First Half Marathon",
+    "description": "13.1 miles. The distance where strangers cry at the finish line and nobody thinks it's weird.",
+    "category": "race",
+    "conditionType": "race_finish",
+    "conditionValue": { "tier": 3 }
+  },
+  {
+    "id": "first_marathon",
+    "name": "First Marathon",
+    "description": "26.2 miles. You are a marathoner. Nobody can ever take that away from you.",
+    "category": "race",
+    "conditionType": "race_finish",
+    "conditionValue": { "tier": 4 }
+  },
+  {
+    "id": "sub_25_5k",
+    "name": "Sub-25 5K",
+    "description": "Under 25 minutes. You're faster than most people who call themselves runners.",
+    "category": "race",
+    "conditionType": "race_time",
+    "conditionValue": { "tier": 1, "maxTimeMinutes": 25 }
+  },
+  {
+    "id": "sub_20_5k",
+    "name": "Sub-20 5K",
+    "description": "Under 20 minutes. That's a 6:26 pace. You've entered a different category of runner.",
+    "category": "race",
+    "conditionType": "race_time",
+    "conditionValue": { "tier": 1, "maxTimeMinutes": 20 }
+  },
+  {
+    "id": "sub_50_10k",
+    "name": "Sub-50 10K",
+    "description": "Under 50 minutes for 6.2 miles. Consistent and strong.",
+    "category": "race",
+    "conditionType": "race_time",
+    "conditionValue": { "tier": 2, "maxTimeMinutes": 50 }
+  },
+  {
+    "id": "sub_2hr_half",
+    "name": "Sub-2 Half Marathon",
+    "description": "Under 2 hours for 13.1 miles. A milestone every distance runner chases.",
+    "category": "race",
+    "conditionType": "race_time",
+    "conditionValue": { "tier": 3, "maxTimeMinutes": 120 }
+  },
+  {
+    "id": "sub_4hr_marathon",
+    "name": "Sub-4 Marathon",
+    "description": "Under 4 hours. You're in the top 30% of all marathon finishers. The training paid off.",
+    "category": "race",
+    "conditionType": "race_time",
+    "conditionValue": { "tier": 4, "maxTimeMinutes": 240 }
+  },
+  {
+    "id": "sub_330_marathon",
+    "name": "Sub-3:30 Marathon",
+    "description": "Under 3 hours 30 minutes. Boston qualifying territory. You're legit.",
+    "category": "race",
+    "conditionType": "race_time",
+    "conditionValue": { "tier": 4, "maxTimeMinutes": 210 }
+  },
+  {
+    "id": "sub_3hr_marathon",
+    "name": "Sub-3 Marathon",
+    "description": "Under 3 hours. Elite amateur territory. Fewer than 5% of marathoners ever do this.",
+    "category": "race",
+    "conditionType": "race_time",
+    "conditionValue": { "tier": 4, "maxTimeMinutes": 180 }
+  },
+  {
+    "id": "week_streak_7",
+    "name": "One Week Streak",
+    "description": "Seven consecutive days of training. The habit is forming.",
+    "category": "training",
+    "conditionType": "training_streak",
+    "conditionValue": { "days": 7 }
+  },
+  {
+    "id": "week_streak_30",
+    "name": "30-Day Streak",
+    "description": "Thirty days of consistent training. This isn't a phase anymore. This is who you are.",
+    "category": "training",
+    "conditionType": "training_streak",
+    "conditionValue": { "days": 30 }
+  },
+  {
+    "id": "total_miles_100",
+    "name": "Century Club",
+    "description": "100 lifetime miles. Your first century. Many more to come.",
+    "category": "milestone",
+    "conditionType": "total_miles",
+    "conditionValue": { "miles": 100 }
+  },
+  {
+    "id": "total_miles_500",
+    "name": "500 Mile Club",
+    "description": "500 lifetime miles. That's roughly the distance from New York to Pittsburgh. On foot.",
+    "category": "milestone",
+    "conditionType": "total_miles",
+    "conditionValue": { "miles": 500 }
+  },
+  {
+    "id": "total_miles_1000",
+    "name": "Thousand Miler",
+    "description": "1,000 lifetime miles. You've run the equivalent of crossing Texas. Your shoes certainly didn't make it.",
+    "category": "milestone",
+    "conditionType": "total_miles",
+    "conditionValue": { "miles": 1000 }
+  },
+  {
+    "id": "first_shoe_purchase",
+    "name": "Proper Footwear",
+    "description": "You bought real running shoes. The cotton shirt can wait, but the feet come first.",
+    "category": "gear",
+    "conditionType": "gear_purchase",
+    "conditionValue": { "category": "shoes" }
+  },
+  {
+    "id": "first_gear_upgrade",
+    "name": "Looking the Part",
+    "description": "Your first apparel upgrade. You're starting to look like a runner, not just someone who jogs.",
+    "category": "gear",
+    "conditionType": "gear_purchase",
+    "conditionValue": { "category": "apparel" }
+  },
+  {
+    "id": "wore_out_shoes",
+    "name": "Sole Survivor",
+    "description": "You wore a pair of shoes down to nothing. This is a rite of passage.",
+    "category": "gear",
+    "conditionType": "shoe_durability_zero",
+    "conditionValue": {}
+  },
+  {
+    "id": "first_dnf",
+    "name": "Did Not Finish",
+    "description": "Not every run ends at the finish line. But you learned something. Rest up. The road will be there tomorrow.",
+    "category": "race",
+    "conditionType": "race_dnf",
+    "conditionValue": {}
+  },
+  {
+    "id": "first_pr",
+    "name": "Personal Record",
+    "description": "You've never run this fast. Remember this feeling. You earned every second of it.",
+    "category": "race",
+    "conditionType": "personal_record",
+    "conditionValue": {}
+  },
+  {
+    "id": "five_races_finished",
+    "name": "Race Veteran",
+    "description": "Five races in the books. You know the pre-race jitters, the mid-race suffering, and the post-race high.",
+    "category": "milestone",
+    "conditionType": "races_finished",
+    "conditionValue": { "count": 5 }
+  },
+  {
+    "id": "ten_races_finished",
+    "name": "Serial Racer",
+    "description": "Ten race finishes. Your medal collection is getting heavy.",
+    "category": "milestone",
+    "conditionType": "races_finished",
+    "conditionValue": { "count": 10 }
+  },
+  {
+    "id": "all_5k_courses",
+    "name": "5K Completionist",
+    "description": "You've run every 5K course available. The local running community knows you by name.",
+    "category": "race",
+    "conditionType": "all_races_in_tier",
+    "conditionValue": { "tier": 1 }
+  },
+  {
+    "id": "endurance_30",
+    "name": "Built to Last",
+    "description": "Endurance stat reached 30. Your aerobic base is solid. Time for longer distances.",
+    "category": "training",
+    "conditionType": "stat_threshold",
+    "conditionValue": { "stat": "endurance", "value": 30 }
+  },
+  {
+    "id": "speed_30",
+    "name": "Finding Your Speed",
+    "description": "Speed stat reached 30. Those intervals are paying off.",
+    "category": "training",
+    "conditionType": "stat_threshold",
+    "conditionValue": { "stat": "speed", "value": 30 }
+  },
+  {
+    "id": "mental_toughness_30",
+    "name": "Mind Over Miles",
+    "description": "Mental Toughness reached 30. You've learned that the body quits long before it has to.",
+    "category": "training",
+    "conditionType": "stat_threshold",
+    "conditionValue": { "stat": "mentalToughness", "value": 30 }
+  },
+  {
+    "id": "top_ten_finish",
+    "name": "Top 10",
+    "description": "A top 10 finish in any race. You're not just finishing anymore. You're competing.",
+    "category": "race",
+    "conditionType": "race_placement",
+    "conditionValue": { "maxPlace": 10 }
+  },
+  {
+    "id": "podium_finish",
+    "name": "On the Podium",
+    "description": "Top 3 finish. Stand tall. You earned that spot.",
+    "category": "race",
+    "conditionType": "race_placement",
+    "conditionValue": { "maxPlace": 3 }
+  },
+  {
+    "id": "race_winner",
+    "name": "First Place",
+    "description": "You won a race. Broke the tape. Crossed the line first. This changes how you see yourself.",
+    "category": "race",
+    "conditionType": "race_placement",
+    "conditionValue": { "maxPlace": 1 }
+  }
+]

@@ -1,0 +1,69 @@
+{
+  "timeCompression": {
+    "gameHoursPerRealHour": 4
+  },
+  "stats": {
+    "xpToStatFormula": "min(100, 1 + 14.2 * log10(1 + xp))",
+    "offlineEfficiency": 0.5,
+    "fatigueGainReduction": 0.005
+  },
+  "injury": {
+    "baseRisk": 0.01,
+    "fatigueThreshold": 70,
+    "fatigueSevereThreshold": 85,
+    "wornShoeThreshold": 0.2,
+    "mileageIncreaseThreshold": 10,
+    "niggleProbability": 0.7,
+    "niggleRecoveryDays": [1, 2],
+    "minorRecoveryDays": [3, 7],
+    "nigglePenalty": 0.05,
+    "minorPenalty": 0.15
+  },
+  "economy": {
+    "prizeMultipliers": {
+      "top10pct": 3,
+      "top25pct": 2,
+      "top50pct": 1,
+      "other": 0.25
+    }
+  },
+  "idle": {
+    "maxHours": 8,
+    "efficiency": 0.5,
+    "restRecoveryBase": 15,
+    "restRecoveryPerRecoveryStat": 0.2,
+    "substitutedRestRecovery": 8
+  },
+  "race": {
+    "basePaceFormula": "15 - (speedStat * 0.1)",
+    "paceModifiers": {
+      "conservative": 1.15,
+      "steady": 1.0,
+      "aggressive": 0.88
+    },
+    "fatigueSlowdownThreshold": 60,
+    "energyBonkThreshold": 20,
+    "bonkPaceMultiplier": 1.5,
+    "energyDrainPerSegment": {
+      "conservative": 8,
+      "steady": 12,
+      "aggressive": 18
+    },
+    "moraleDropPerSegment": 3,
+    "dnfMoraleThreshold": 10
+  },
+  "progression": {
+    "xpPerWorkout": 100,
+    "xpPerRaceBase": [200, 400, 800, 1500],
+    "xpPerPR": 500,
+    "levelThresholds": [0, 500, 1200, 2500, 4500, 7500, 12000, 18000, 26000, 36000, 48000, 65000]
+  },
+  "training": {
+    "workoutDurations": {
+      "easy_run": 25000,
+      "long_run": 45000,
+      "intervals": 20000
+    },
+    "recoveryPerRestDay": 15
+  }
+}

@@ -1,0 +1,313 @@
+[
+  {
+    "id": "crowd_energy",
+    "name": "Crowd Energy",
+    "description": "The spectators are lined up three deep, screaming your name like you're winning the Olympics. You're not. But it feels like it.",
+    "type": "positive",
+    "baseProbability": 0.3,
+    "terrainTypes": ["flat_road"],
+    "minTier": 1,
+    "effect": { "morale": 10 },
+    "choices": null
+  },
+  {
+    "id": "runners_high",
+    "name": "Runner's High",
+    "description": "Everything clicks. Your breathing is easy, your legs feel light, the world is beautiful. This is why you run.",
+    "type": "positive",
+    "baseProbability": 0.1,
+    "terrainTypes": ["flat_road", "rolling_hills"],
+    "minTier": 1,
+    "effect": { "morale": 15, "fatigue": -5 },
+    "choices": null
+  },
+  {
+    "id": "second_wind",
+    "name": "Second Wind",
+    "description": "You were hurting. Now you're not. The legs have come back to life and the pace feels easy again.",
+    "type": "positive",
+    "baseProbability": 0.12,
+    "terrainTypes": ["flat_road", "rolling_hills"],
+    "minTier": 2,
+    "minSegment": 3,
+    "statCheck": "endurance",
+    "effect": { "energy": 10, "morale": 8, "fatigue": -3 },
+    "choices": null
+  },
+  {
+    "id": "perfect_weather",
+    "name": "Perfect Weather",
+    "description": "Cool breeze, overcast skies, low humidity. Runners call this 'PR weather.' The conditions are doing half the work for you.",
+    "type": "positive",
+    "baseProbability": 0.15,
+    "terrainTypes": ["flat_road", "rolling_hills", "steep_climb"],
+    "minTier": 1,
+    "effect": { "morale": 8, "energy": 5 },
+    "choices": null
+  },
+  {
+    "id": "downhill_cruise",
+    "name": "Downhill Cruise",
+    "description": "A long, gradual descent. Gravity is your friend. Let it carry you.",
+    "type": "positive",
+    "baseProbability": 0.2,
+    "terrainTypes": ["rolling_hills"],
+    "minTier": 1,
+    "effect": { "energy": 5, "morale": 5 },
+    "choices": null
+  },
+  {
+    "id": "stomach_trouble",
+    "name": "Stomach Trouble",
+    "description": "Your stomach is staging a rebellion. Something you ate is fighting its way back up. Every runner knows this feeling.",
+    "type": "negative",
+    "baseProbability": 0.15,
+    "terrainTypes": ["flat_road", "rolling_hills"],
+    "minTier": 2,
+    "statCheck": "nutritionIQ",
+    "effect": null,
+    "choices": [
+      {
+        "label": "Slow down and sip water",
+        "effect": { "energy": -5, "timepenaltySeconds": 60 },
+        "outcome": "The nausea passes after a few minutes. Smart call."
+      },
+      {
+        "label": "Push through it",
+        "effect": { "energy": -15, "morale": -10 },
+        "outcome": "Bad call. It gets worse before it gets better. Way worse."
+      },
+      {
+        "label": "Walk for a bit",
+        "effect": { "timepenaltySeconds": 120, "morale": 5 },
+        "outcome": "Walking helps settle things. You lose time but feel human again."
+      }
+    ]
+  },
+  {
+    "id": "hot_spot",
+    "name": "Hot Spot",
+    "description": "You feel that telltale warmth on the ball of your foot. Right now it's a warning. In two miles it'll be a blister.",
+    "type": "negative",
+    "baseProbability": 0.1,
+    "terrainTypes": ["flat_road", "rolling_hills", "steep_climb"],
+    "minTier": 2,
+    "statCheck": null,
+    "gearCheck": "running_socks",
+    "effect": null,
+    "choices": [
+      {
+        "label": "Stop and adjust (30 seconds)",
+        "effect": { "timepenaltySeconds": 30 },
+        "outcome": "Quick sock adjustment. Crisis averted. Thirty seconds well spent."
+      },
+      {
+        "label": "Ignore it",
+        "effect": { "blisterRisk": 0.6 },
+        "outcome": "You'll deal with it later. That's what every runner says right before they can't walk."
+      }
+    ]
+  },
+  {
+    "id": "side_stitch",
+    "name": "Side Stitch",
+    "description": "A sharp, stabbing pain just below your ribs. The classic runner's side stitch. Breathing makes it worse.",
+    "type": "negative",
+    "baseProbability": 0.12,
+    "terrainTypes": ["flat_road", "rolling_hills"],
+    "minTier": 1,
+    "effect": null,
+    "choices": [
+      {
+        "label": "Slow down and breathe deeply",
+        "effect": { "timepenaltySeconds": 45, "morale": 3 },
+        "outcome": "Deep belly breaths. In through the nose, out through the mouth. It fades."
+      },
+      {
+        "label": "Press on it and keep running",
+        "effect": { "energy": -8, "morale": -5 },
+        "outcome": "The pressure helps a little, but you're grimacing through every step."
+      }
+    ]
+  },
+  {
+    "id": "headwind",
+    "name": "Headwind",
+    "description": "The wind shifts and you're running straight into it. Every step feels like pushing through a wall of air.",
+    "type": "negative",
+    "baseProbability": 0.15,
+    "terrainTypes": ["flat_road"],
+    "minTier": 1,
+    "effect": { "energy": -5, "timepenaltySeconds": 30, "morale": -5 },
+    "choices": null
+  },
+  {
+    "id": "wrong_turn",
+    "name": "Wrong Turn",
+    "description": "You missed a course marker. By the time you realize, you've added distance. A volunteer waves you back on course.",
+    "type": "negative",
+    "baseProbability": 0.05,
+    "terrainTypes": ["rolling_hills"],
+    "minTier": 2,
+    "effect": { "timepenaltySeconds": 45, "morale": -5 },
+    "choices": null
+  },
+  {
+    "id": "the_wall",
+    "name": "The Wall",
+    "description": "Mile 20. Your glycogen is gone. Your legs are concrete. Every cell in your body is begging you to stop. This is the marathon.",
+    "type": "negative",
+    "baseProbability": 0.8,
+    "terrainTypes": ["flat_road", "rolling_hills"],
+    "minTier": 4,
+    "minSegment": 6,
+    "oncePerRace": true,
+    "statCheck": "mentalToughness",
+    "effect": null,
+    "choices": [
+      {
+        "label": "Dig deep",
+        "effect": { "morale": -15, "energy": -10, "mentalToughnessXp": 50 },
+        "outcome": "You find something inside you didn't know was there. This is what you trained for."
+      },
+      {
+        "label": "Walk and regroup",
+        "effect": { "timepenaltySeconds": 180, "morale": 5 },
+        "outcome": "Walking lets you gather yourself. Many marathoners walk the wall. No shame in it."
+      }
+    ]
+  },
+  {
+    "id": "muscle_cramp",
+    "name": "Muscle Cramp",
+    "description": "Your calf seizes up mid-stride. The kind of cramp that stops you dead and makes you grab the muscle like it owes you money.",
+    "type": "negative",
+    "baseProbability": 0.1,
+    "terrainTypes": ["flat_road", "rolling_hills", "steep_climb"],
+    "minTier": 2,
+    "statCheck": "endurance",
+    "effect": null,
+    "choices": [
+      {
+        "label": "Stop and stretch it out",
+        "effect": { "timepenaltySeconds": 60, "energy": -3 },
+        "outcome": "Thirty seconds of stretching on the side of the road. It releases. Keep moving."
+      },
+      {
+        "label": "Run through it",
+        "effect": { "energy": -12, "morale": -8 },
+        "outcome": "It loosens eventually, but every step until then is agony."
+      },
+      {
+        "label": "Walk until it passes",
+        "effect": { "timepenaltySeconds": 90, "morale": 2 },
+        "outcome": "Walking gives the muscle time to relax. Slow but safe."
+      }
+    ]
+  },
+  {
+    "id": "dehydration_warning",
+    "name": "Dehydration Warning",
+    "description": "Your mouth is dry, your head is pounding, and the world is getting a little fuzzy around the edges. You need fluids. Now.",
+    "type": "negative",
+    "baseProbability": 0.1,
+    "terrainTypes": ["flat_road", "rolling_hills", "steep_climb"],
+    "minTier": 2,
+    "statCheck": "nutritionIQ",
+    "effect": null,
+    "choices": [
+      {
+        "label": "Drink everything at the next aid station",
+        "effect": { "timepenaltySeconds": 45, "energy": 5 },
+        "outcome": "Water, electrolytes, more water. You feel the fog lift after a few minutes."
+      },
+      {
+        "label": "Ration what you have and push on",
+        "effect": { "energy": -10, "morale": -8 },
+        "outcome": "Small sips. It's not enough. The headache stays."
+      }
+    ]
+  },
+  {
+    "id": "fellow_runner_struggling",
+    "name": "Fellow Runner Struggling",
+    "description": "A runner beside you is in rough shape. Hands on knees, breathing hard, eyes unfocused. They look like they might drop.",
+    "type": "neutral",
+    "baseProbability": 0.08,
+    "terrainTypes": ["flat_road", "rolling_hills", "steep_climb"],
+    "minTier": 2,
+    "effect": null,
+    "choices": [
+      {
+        "label": "Run with them and offer encouragement",
+        "effect": { "timepenaltySeconds": 60, "morale": 10, "mentalToughnessXp": 30 },
+        "outcome": "You match their pace and talk them through it. They look up and nod. 'Thank you.' This is what running is about."
+      },
+      {
+        "label": "Point them to the next aid station",
+        "effect": { "timepenaltySeconds": 10, "morale": 3, "mentalToughnessXp": 10 },
+        "outcome": "A quick word and a pointed finger. It's something. You hope they make it."
+      },
+      {
+        "label": "Keep running",
+        "effect": { "morale": -3 },
+        "outcome": "You run past. You're racing too. But you think about them for the next mile."
+      }
+    ]
+  },
+  {
+    "id": "porta_potty_emergency",
+    "name": "Porta-Potty Emergency",
+    "description": "Nature calls. Urgently. You spot the row of blue boxes ahead. There might be a line.",
+    "type": "negative",
+    "baseProbability": 0.08,
+    "terrainTypes": ["flat_road"],
+    "minTier": 1,
+    "effect": null,
+    "choices": [
+      {
+        "label": "Stop and wait in line",
+        "effect": { "timepenaltySeconds": 90, "morale": 5 },
+        "outcome": "Sweet relief. Three minutes you'll never get back, but you can focus on running now."
+      },
+      {
+        "label": "Hold it and keep going",
+        "effect": { "energy": -8, "morale": -10 },
+        "outcome": "Every step is a negotiation with your body. This is not the suffering you signed up for."
+      }
+    ]
+  },
+  {
+    "id": "spectator_sign",
+    "name": "Spectator Sign",
+    "description": "A hand-painted sign in the crowd catches your eye: 'Worst Parade Ever.' You laugh out loud for the first time in miles.",
+    "type": "positive",
+    "baseProbability": 0.2,
+    "terrainTypes": ["flat_road"],
+    "minTier": 1,
+    "effect": { "morale": 5 },
+    "choices": null
+  },
+  {
+    "id": "shoelace_untied",
+    "name": "Shoelace Untied",
+    "description": "You feel your left shoe getting loose. The lace is flapping. Every runner's minor nightmare.",
+    "type": "negative",
+    "baseProbability": 0.06,
+    "terrainTypes": ["flat_road", "rolling_hills"],
+    "minTier": 1,
+    "effect": null,
+    "choices": [
+      {
+        "label": "Stop and retie",
+        "effect": { "timepenaltySeconds": 15 },
+        "outcome": "Double knot this time. Lesson learned."
+      },
+      {
+        "label": "Keep running and hope for the best",
+        "effect": { "blisterRisk": 0.2, "morale": -3 },
+        "outcome": "The loose shoe shifts with every step. Your foot is not happy about this decision."
+      }
+    ]
+  }
+]

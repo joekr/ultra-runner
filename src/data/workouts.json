@@ -1,0 +1,67 @@
+[
+  {
+    "id": "easy_run",
+    "name": "Easy Run",
+    "description": "Conversational pace. The foundation of all training.",
+    "durationMs": 25000,
+    "baseMiles": 4,
+    "cadenceZone": { "min": 1.5, "sweet": [2.0, 2.8], "max": 4.0 },
+    "baseXpPerTick": 1.0,
+    "baseFatiguePerTick": 0.15,
+    "statDistribution": {
+      "endurance": 0.6,
+      "recovery": 0.3,
+      "speed": 0.1
+    },
+    "idleEligible": true,
+    "baseXpPerDay": 80
+  },
+  {
+    "id": "long_run",
+    "name": "Long Run",
+    "description": "The signature workout. Build your engine.",
+    "durationMs": 45000,
+    "baseMiles": 10,
+    "cadenceZone": { "min": 1.5, "sweet": [2.0, 2.5], "max": 3.5 },
+    "baseXpPerTick": 1.5,
+    "baseFatiguePerTick": 0.3,
+    "statDistribution": {
+      "endurance": 0.6,
+      "mentalToughness": 0.3,
+      "strength": 0.1
+    },
+    "idleEligible": false,
+    "baseXpPerDay": 150
+  },
+  {
+    "id": "intervals",
+    "name": "Intervals",
+    "description": "Hard efforts with recovery. Speed is built here.",
+    "durationMs": 20000,
+    "baseMiles": 5,
+    "cadenceZone": { "min": 2.5, "sweet": [3.5, 4.5], "max": 6.0 },
+    "baseXpPerTick": 2.0,
+    "baseFatiguePerTick": 0.5,
+    "statDistribution": {
+      "speed": 0.6,
+      "endurance": 0.3,
+      "mentalToughness": 0.1
+    },
+    "idleEligible": false,
+    "baseXpPerDay": 120
+  },
+  {
+    "id": "rest",
+    "name": "Rest Day",
+    "description": "The body adapts during rest, not during training.",
+    "durationMs": 0,
+    "baseMiles": 0,
+    "cadenceZone": null,
+    "baseXpPerTick": 0,
+    "baseFatiguePerTick": 0,
+    "statDistribution": {},
+    "idleEligible": true,
+    "baseXpPerDay": 0,
+    "recoveryAmount": 15
+  }
+]

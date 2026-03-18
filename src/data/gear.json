@@ -1,0 +1,73 @@
+{
+  "shoes": [
+    {
+      "id": "basic_trainers",
+      "name": "Basic Trainers",
+      "tier": 1,
+      "cost": 80,
+      "durability": 300,
+      "effects": {},
+      "description": "They'll get you to the finish line. Probably."
+    },
+    {
+      "id": "cushioned_road",
+      "name": "Cushioned Road Shoe",
+      "tier": 2,
+      "cost": 130,
+      "durability": 400,
+      "effects": { "speedBonus": 0.05, "terrain": "flat_road" },
+      "description": "Plush cushioning for the road. Your knees will thank you."
+    },
+    {
+      "id": "trail_shoes",
+      "name": "Trail Running Shoes",
+      "tier": 3,
+      "cost": 140,
+      "durability": 350,
+      "effects": {
+        "speedBonus": 0.10,
+        "terrain": "rolling_hills",
+        "roadPenalty": 0.05
+      },
+      "description": "Aggressive lugs for dirt and rocks. Awkward on pavement."
+    }
+  ],
+  "apparel": [
+    {
+      "id": "cotton_tee",
+      "name": "Cotton T-Shirt",
+      "tier": 0,
+      "cost": 0,
+      "durability": 9999,
+      "effects": { "chafePenalty": 0.05 },
+      "description": "The shirt you already own. Cotton kills, but it's free."
+    },
+    {
+      "id": "tech_tee",
+      "name": "Tech Tee",
+      "tier": 1,
+      "cost": 45,
+      "durability": 9999,
+      "effects": {},
+      "description": "Moisture-wicking. The first upgrade every runner makes."
+    },
+    {
+      "id": "split_shorts",
+      "name": "Split Shorts",
+      "tier": 1,
+      "cost": 40,
+      "durability": 9999,
+      "effects": {},
+      "description": "Built-in liner. No underwear required. Welcome to running."
+    },
+    {
+      "id": "running_socks",
+      "name": "Running Socks",
+      "tier": 1,
+      "cost": 15,
+      "durability": 9999,
+      "effects": { "blistReduction": 0.3 },
+      "description": "Thin, moisture-wicking, and worth every penny."
+    }
+  ]
+}

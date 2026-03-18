@@ -1,0 +1,131 @@
+/* CSS Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100%;
+  line-height: 1.5;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+
+/* CSS Custom Properties */
+:root {
+  /* Earth-tone color palette */
+  --color-terracotta: #c2703e;
+  --color-terracotta-light: #d4915f;
+  --color-terracotta-dark: #a35a2e;
+
+  --color-sage: #7a8b6f;
+  --color-sage-light: #97a88c;
+  --color-sage-dark: #5e6d54;
+
+  --color-stone: #8c8279;
+  --color-stone-light: #a8a099;
+  --color-stone-dark: #6e665e;
+
+  --color-warm-gray-50: #faf9f7;
+  --color-warm-gray-100: #f0eeeb;
+  --color-warm-gray-200: #e2dfd9;
+  --color-warm-gray-300: #c9c5bd;
+  --color-warm-gray-400: #a8a299;
+  --color-warm-gray-500: #8a847a;
+  --color-warm-gray-600: #6e685e;
+  --color-warm-gray-700: #55504a;
+  --color-warm-gray-800: #3d3a36;
+  --color-warm-gray-900: #282623;
+
+  /* Semantic colors */
+  --color-bg: var(--color-warm-gray-50);
+  --color-text: var(--color-warm-gray-900);
+  --color-text-muted: var(--color-warm-gray-500);
+  --color-accent: var(--color-terracotta);
+  --color-accent-hover: var(--color-terracotta-dark);
+  --color-success: var(--color-sage);
+  --color-surface: #ffffff;
+  --color-border: var(--color-warm-gray-200);
+
+  /* Typography */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+
+  /* Spacing scale */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+#app {
+  min-height: 100vh;
+}

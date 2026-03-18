@@ -1,0 +1,276 @@
+[
+  {
+    "id": "park_run_5k",
+    "name": "Park Run 5K",
+    "distance": 3.1,
+    "unit": "miles",
+    "tier": 1,
+    "terrain": "flat_road",
+    "segments": 3,
+    "entryFee": 25,
+    "basePrize": 50,
+    "fieldSize": [80, 150],
+    "cutoffMinutes": null,
+    "description": "Your local Saturday morning 5K. Friendly faces, fresh air.",
+    "segmentDefinitions": [
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": false }
+    ]
+  },
+  {
+    "id": "turkey_trot_5k",
+    "name": "Turkey Trot 5K",
+    "distance": 3.1,
+    "unit": "miles",
+    "tier": 1,
+    "terrain": "flat_road",
+    "segments": 3,
+    "entryFee": 30,
+    "basePrize": 50,
+    "fieldSize": [200, 500],
+    "cutoffMinutes": null,
+    "description": "Thanksgiving tradition. Run now, eat later. The pie tastes better when you've earned it.",
+    "segmentDefinitions": [
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": false }
+    ]
+  },
+  {
+    "id": "color_run_5k",
+    "name": "Color Run 5K",
+    "distance": 3.1,
+    "unit": "miles",
+    "tier": 1,
+    "terrain": "flat_road",
+    "segments": 3,
+    "entryFee": 35,
+    "basePrize": 25,
+    "fieldSize": [300, 800],
+    "cutoffMinutes": null,
+    "description": "You'll never get the dye out of that shirt. Or your hair. Or your car seats.",
+    "segmentDefinitions": [
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": false }
+    ]
+  },
+  {
+    "id": "fun_run_5k",
+    "name": "Fun Run 5K",
+    "distance": 3.1,
+    "unit": "miles",
+    "tier": 1,
+    "terrain": "flat_road",
+    "segments": 3,
+    "entryFee": 20,
+    "basePrize": 30,
+    "fieldSize": [50, 120],
+    "cutoffMinutes": null,
+    "description": "The name says it all. No pressure, no PRs, just a good time.",
+    "segmentDefinitions": [
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": false }
+    ]
+  },
+  {
+    "id": "bridge_run_10k",
+    "name": "Bridge Run 10K",
+    "distance": 6.2,
+    "unit": "miles",
+    "tier": 2,
+    "terrain": "rolling_hills",
+    "segments": 4,
+    "entryFee": 40,
+    "basePrize": 100,
+    "fieldSize": [150, 400],
+    "cutoffMinutes": 90,
+    "description": "Cross the bridge, earn the view. The uphill is worth it for the downhill.",
+    "segmentDefinitions": [
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "rolling_hills", "hasAidStation": true },
+      { "terrain": "rolling_hills", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": false }
+    ]
+  },
+  {
+    "id": "summer_sizzler_10k",
+    "name": "Summer Sizzler 10K",
+    "distance": 6.2,
+    "unit": "miles",
+    "tier": 2,
+    "terrain": "flat_road",
+    "segments": 4,
+    "entryFee": 45,
+    "basePrize": 100,
+    "fieldSize": [100, 300],
+    "cutoffMinutes": 90,
+    "description": "Bring water. Lots of water. The July sun doesn't care about your training plan.",
+    "segmentDefinitions": [
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true },
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true }
+    ]
+  },
+  {
+    "id": "riverside_10k",
+    "name": "Riverside 10K",
+    "distance": 6.2,
+    "unit": "miles",
+    "tier": 2,
+    "terrain": "flat_road",
+    "segments": 4,
+    "entryFee": 35,
+    "basePrize": 80,
+    "fieldSize": [120, 350],
+    "cutoffMinutes": 90,
+    "description": "Flat and fast along the river. A PR waiting to happen.",
+    "segmentDefinitions": [
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true },
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": false }
+    ]
+  },
+  {
+    "id": "rock_city_half",
+    "name": "Rock City Half Marathon",
+    "distance": 13.1,
+    "unit": "miles",
+    "tier": 3,
+    "terrain": "rolling_hills",
+    "segments": 6,
+    "entryFee": 85,
+    "basePrize": 200,
+    "fieldSize": [500, 2000],
+    "cutoffMinutes": 210,
+    "description": "13.1 miles of grit. The hills will test you, but the crowd at the finish makes it worth every step.",
+    "segmentDefinitions": [
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "rolling_hills", "hasAidStation": true },
+      { "terrain": "rolling_hills", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true },
+      { "terrain": "rolling_hills", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true }
+    ]
+  },
+  {
+    "id": "spring_classic_half",
+    "name": "Spring Classic Half Marathon",
+    "distance": 13.1,
+    "unit": "miles",
+    "tier": 3,
+    "terrain": "flat_road",
+    "segments": 6,
+    "entryFee": 90,
+    "basePrize": 250,
+    "fieldSize": [800, 3000],
+    "cutoffMinutes": 210,
+    "description": "Perfect weather, fast course. If you're chasing a half marathon PR, this is where you do it.",
+    "segmentDefinitions": [
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true },
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true },
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true }
+    ]
+  },
+  {
+    "id": "trail_half_marathon",
+    "name": "Trail Half Marathon",
+    "distance": 13.1,
+    "unit": "miles",
+    "tier": 3,
+    "terrain": "rolling_hills",
+    "segments": 6,
+    "entryFee": 75,
+    "basePrize": 150,
+    "fieldSize": [200, 600],
+    "cutoffMinutes": 240,
+    "description": "Your first taste of dirt. Slower than the road, but you'll forget about your watch by mile 3.",
+    "segmentDefinitions": [
+      { "terrain": "rolling_hills", "hasAidStation": false },
+      { "terrain": "rolling_hills", "hasAidStation": true },
+      { "terrain": "steep_climb", "hasAidStation": false },
+      { "terrain": "rolling_hills", "hasAidStation": true },
+      { "terrain": "rolling_hills", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true }
+    ]
+  },
+  {
+    "id": "big_city_marathon",
+    "name": "Big City Marathon",
+    "distance": 26.2,
+    "unit": "miles",
+    "tier": 4,
+    "terrain": "flat_road",
+    "segments": 8,
+    "entryFee": 150,
+    "basePrize": 500,
+    "fieldSize": [2000, 10000],
+    "cutoffMinutes": 420,
+    "description": "26.2 miles. The distance that breaks and makes people. You'll question everything at mile 20 and remember everything at the finish.",
+    "segmentDefinitions": [
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true },
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "rolling_hills", "hasAidStation": true },
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true },
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true }
+    ]
+  },
+  {
+    "id": "mountain_marathon",
+    "name": "Mountain Marathon",
+    "distance": 26.2,
+    "unit": "miles",
+    "tier": 4,
+    "terrain": "rolling_hills",
+    "segments": 8,
+    "entryFee": 175,
+    "basePrize": 600,
+    "fieldSize": [500, 2000],
+    "cutoffMinutes": 480,
+    "description": "Not your typical marathon. The hills are real, the climbs are relentless, and the views are earned.",
+    "segmentDefinitions": [
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "rolling_hills", "hasAidStation": true },
+      { "terrain": "steep_climb", "hasAidStation": false },
+      { "terrain": "rolling_hills", "hasAidStation": true },
+      { "terrain": "steep_climb", "hasAidStation": false },
+      { "terrain": "rolling_hills", "hasAidStation": true },
+      { "terrain": "rolling_hills", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true }
+    ]
+  },
+  {
+    "id": "coastal_marathon",
+    "name": "Coastal Marathon",
+    "distance": 26.2,
+    "unit": "miles",
+    "tier": 4,
+    "terrain": "flat_road",
+    "segments": 8,
+    "entryFee": 160,
+    "basePrize": 500,
+    "fieldSize": [1500, 5000],
+    "cutoffMinutes": 420,
+    "description": "Ocean views for 26.2 miles. The salt air and crashing waves almost make you forget you're running a marathon. Almost.",
+    "segmentDefinitions": [
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true },
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "rolling_hills", "hasAidStation": true },
+      { "terrain": "flat_road", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true },
+      { "terrain": "rolling_hills", "hasAidStation": false },
+      { "terrain": "flat_road", "hasAidStation": true }
+    ]
+  }
+]
