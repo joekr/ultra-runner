@@ -416,7 +416,7 @@
 
 .active-workout__tap-zone {
   flex: 1;
-  min-height: 200px;
+  min-height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;

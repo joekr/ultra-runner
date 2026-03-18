@@ -1,6 +1,6 @@
 // types.ts — All shared TypeScript interfaces/types for Ultra Runner Simulator
 
-export const CURRENT_SCHEMA_VERSION = 6;
+export const CURRENT_SCHEMA_VERSION = 7;
 
 // ── Top-Level Game State ──────────────────────────────────────────────
 
@@ -111,6 +111,7 @@ export interface TrainingState {
   previousWeekMileage: number;
   totalMiles: number;
   streak: number;
+  consecutiveRestDays: number; // tracks rest days in a row, resets on training
   recoveryToolsUsedOnDay: Record<string, number>; // toolId -> gameDay last used
 }
 

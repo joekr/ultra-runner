@@ -30,10 +30,17 @@ export function AidStationPanel({ onContinue }: AidStationPanelProps) {
         {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")} at
         station
       </div>
-      <Button
-        label="Continue Race"
-        onClick={() => onContinue(seconds)}
-      />
+      <div style={{ display: "flex", gap: "var(--space-2)" }}>
+        <Button
+          label="Stop & Recover"
+          onClick={() => onContinue(seconds)}
+        />
+        <Button
+          label="Skip"
+          onClick={() => onContinue(0)}
+          variant="secondary"
+        />
+      </div>
     </div>
   );
 }

@@ -11,6 +11,11 @@ import { AidStationPanel } from "../components/AidStationPanel";
 import racesData from "../data/races.json";
 import eventsData from "../data/events.json";
 import { fatigueCurveMultiplier } from "../systems/stats";
+import { EquippedLoadout } from "../components/EquippedLoadout";
+import { getConsumableTemplate } from "../systems/gear";
+import type { ConsumableTemplate } from "../systems/gear";
+import { getConsumableIcon } from "../components/Icons";
+import { xpToStat } from "../state/gameState";
 
 type Pace = "conservative" | "steady" | "aggressive";
 
@@ -45,6 +50,13 @@ function formatRaceTime(seconds: number): string {
   return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+const FUEL_CATEGORY_LABELS: Record<string, string> = {
+  gel: "Gel",
+  chew: "Chew",
+  food: "Food",
+  drink: "Drink",
+};
+
 function formatDistanceLabel(key: string): string {
   const labels: Record<string, string> = {
     "5k": "5K",
@@ -62,6 +74,9 @@ export function ActiveRace() {
   const [pendingEvent, setPendingEvent] = useState<EventDef | null>(null);
   const [outcomeText, setOutcomeText] = useState<string | null>(null);
   const [showAidStation, setShowAidStation] = useState(false);
+  const [showFuelPicker, setShowFuelPicker] = useState(false);
+  const [usedCategoriesThisSegment, setUsedCategoriesThisSegment] = useState<Set<string>>(new Set());
+  const [fuelMessage, setFuelMessage] = useState<string | null>(null);
   const [raceResult, setRaceResult] = useState<RaceCompletionInfo | null>(null);
   const [dnfResult, setDnfResult] = useState<DNFCompletionInfo | null>(null);
 
@@ -194,7 +209,56 @@ export function ActiveRace() {
       }
     }
 
-    // Check for aid station
+    // Reset fuel categories for the new segment and show fuel picker
+    setUsedCategoriesThisSegment(new Set());
+    setShowFuelPicker(true);
+  }
+
+  function handleUseFuel(templateId: string) {
+    const current = gameState.value;
+    if (!current || !current.race.active) return;
+
+    const tmpl = getConsumableTemplate(templateId);
+    if (!tmpl) return;
+
+    const owned = current.inventory.consumables[templateId] ?? 0;
+    if (owned <= 0) return;
+
+    // Check nutrition IQ requirement
+    const nutritionStat = xpToStat(current.stats.nutritionIQ.trainingXp);
+    if (nutritionStat < tmpl.requiredNutritionIQ) return;
+
+    // Check if category already used this segment
+    if (usedCategoriesThisSegment.has(tmpl.fuelCategory)) return;
+
+    // Apply fuel
+    const race = current.race.active;
+    const newFatigue = Math.max(0, race.fatigue - tmpl.effects.fatigueReduction);
+    const energyBoost = tmpl.effects.fatigueReduction * 0.5;
+    const newEnergy = Math.min(100, race.energy + energyBoost);
+    const newMorale = Math.min(100, race.morale + 2); // eating boosts morale
+
+    updateGameState({
+      race: {
+        active: { ...race, fatigue: newFatigue, energy: newEnergy, morale: newMorale },
+      },
+      inventory: {
+        ...current.inventory,
+        consumables: {
+          ...current.inventory.consumables,
+          [templateId]: owned - 1,
+        },
+      },
+    });
+
+    setUsedCategoriesThisSegment((prev) => new Set([...prev, tmpl.fuelCategory]));
+    setFuelMessage(`${tmpl.name} — fatigue -${tmpl.effects.fatigueReduction}, energy +${energyBoost.toFixed(0)}`);
+    setTimeout(() => setFuelMessage(null), 2000);
+  }
+
+  function handleCloseFuelPicker() {
+    setShowFuelPicker(false);
+    // After fuel picker, check for aid station
     if (segDef?.hasAidStation) {
       setShowAidStation(true);
     }
@@ -459,6 +523,9 @@ export function ActiveRace() {
       <div class="active-race__header">
         <div class="active-race__name">{raceName}</div>
         <div class="active-race__distance">{raceDistance} miles</div>
+        <div style={{ marginTop: "var(--space-1)" }}>
+          <EquippedLoadout compact />
+        </div>
       </div>
 
       {/* Segment dots */}
@@ -557,6 +624,114 @@ export function ActiveRace() {
           }}
           onChoice={handleEventChoice}
         />
+      )}
+
+      {/* Fuel Picker */}
+      {showFuelPicker && !pendingEvent && !outcomeText && (
+        <div class="modal-overlay">
+          <div style={{
+            background: "var(--color-bg, #fff)",
+            borderRadius: "var(--radius-lg, 12px)",
+            padding: "var(--space-4)",
+            maxWidth: "360px",
+            width: "calc(100% - 32px)",
+            maxHeight: "70vh",
+            overflowY: "auto",
+          }}>
+            <div style={{ fontWeight: 700, marginBottom: "var(--space-2)", textAlign: "center" }}>
+              Fuel Up
+            </div>
+            <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", textAlign: "center", marginBottom: "var(--space-3)" }}>
+              One item per category per segment
+            </div>
+            {(() => {
+              const consumables = state.inventory.consumables;
+              const nutritionStat = xpToStat(state.stats.nutritionIQ.trainingXp);
+              const available = Object.entries(consumables)
+                .filter(([, qty]) => qty > 0)
+                .map(([id, qty]) => ({ id, qty, tmpl: getConsumableTemplate(id) }))
+                .filter((item): item is { id: string; qty: number; tmpl: ConsumableTemplate } => item.tmpl != null);
+
+              if (available.length === 0) {
+                return (
+                  <div style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)", textAlign: "center", marginBottom: "var(--space-3)" }}>
+                    No fuel available. Buy some from the shop!
+                  </div>
+                );
+              }
+
+              // Group by category
+              const categories = ["gel", "chew", "food", "drink"] as const;
+              return categories.map((cat) => {
+                const items = available.filter((a) => a.tmpl.fuelCategory === cat);
+                if (items.length === 0) return null;
+                const categoryUsed = usedCategoriesThisSegment.has(cat);
+                return (
+                  <div key={cat} style={{ marginBottom: "var(--space-2)" }}>
+                    <div style={{
+                      fontSize: "var(--text-xs)",
+                      fontWeight: 700,
+                      color: categoryUsed ? "var(--color-text-muted)" : "var(--color-warm-gray-600)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      marginBottom: "var(--space-1)",
+                    }}>
+                      {FUEL_CATEGORY_LABELS[cat]} {categoryUsed && "— used"}
+                    </div>
+                    {items.map(({ id, qty, tmpl }) => {
+                      const locked = nutritionStat < tmpl.requiredNutritionIQ;
+                      const disabled = categoryUsed || locked;
+                      return (
+                        <div key={id} style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "var(--space-2)",
+                          padding: "var(--space-1) 0",
+                          opacity: disabled ? 0.5 : 1,
+                        }}>
+                          {getConsumableIcon(id, 22, disabled ? "var(--color-warm-gray-300)" : "var(--color-sage)")}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: "var(--text-sm)", fontWeight: 600 }}>
+                              {tmpl.name} <span style={{ fontWeight: 400, color: "var(--color-text-muted)" }}>x{qty}</span>
+                            </div>
+                            {locked ? (
+                              <div style={{ fontSize: "var(--text-xs)", color: "#c0392b" }}>
+                                Nutrition IQ {tmpl.requiredNutritionIQ} needed
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-sage)" }}>
+                                -{tmpl.effects.fatigueReduction} fatigue, +{(tmpl.effects.fatigueReduction * 0.5).toFixed(0)} energy
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            label="Use"
+                            onClick={() => handleUseFuel(id)}
+                            disabled={disabled}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              });
+            })()}
+            {fuelMessage && (
+              <div style={{
+                textAlign: "center",
+                fontSize: "var(--text-sm)",
+                color: "var(--color-sage)",
+                fontWeight: 600,
+                marginBottom: "var(--space-2)",
+              }}>
+                {fuelMessage}
+              </div>
+            )}
+            <div style={{ marginTop: "var(--space-3)" }}>
+              <Button label="Continue" onClick={handleCloseFuelPicker} />
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Aid Station */}

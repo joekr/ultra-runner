@@ -73,6 +73,15 @@ export const migrations: Record<number, Migration> = {
       sponsoredRunTier: state.flags.sponsoredRunTier ?? 0,
     },
   }),
+  // v6 → v7: Add consecutiveRestDays tracking
+  7: (state: any) => ({
+    ...state,
+    version: 7,
+    training: {
+      ...state.training,
+      consecutiveRestDays: state.training.consecutiveRestDays ?? 0,
+    },
+  }),
 };
 
 /**

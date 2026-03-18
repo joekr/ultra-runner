@@ -171,6 +171,16 @@ export function TechTeeIcon({ size = 32, color = "currentColor" }: IconProps) {
   );
 }
 
+export function BasketballShortsIcon({ size = 32, color = "currentColor" }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M6 8H26V16L22 26H18L16 18L14 26H10L6 16V8Z" fill={color} opacity="0.2" stroke={color} stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M6 8H26" stroke={color} stroke-width="2.5" stroke-linecap="round" />
+      <path d="M14 8V14" stroke={color} stroke-width="1" stroke-linecap="round" stroke-dasharray="2 2" />
+    </svg>
+  );
+}
+
 export function SplitShortsIcon({ size = 32, color = "currentColor" }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -314,6 +324,7 @@ export function getGearIcon(templateId: string, size?: number, color?: string): 
     // Apparel
     case "cotton_tee": return <CottonTeeIcon size={s} color={c} />;
     case "tech_tee": return <TechTeeIcon size={s} color={c} />;
+    case "basketball_shorts": return <BasketballShortsIcon size={s} color={c} />;
     case "split_shorts": return <SplitShortsIcon size={s} color={c} />;
     case "racing_singlet": return <RacingSingletIcon size={s} color={c} />;
     case "rain_jacket": return <RainJacketIcon size={s} color={c} />;

@@ -41,7 +41,7 @@ describe("saveManager", () => {
       expect(loaded!.runner.name).toBe("TestRunner");
       expect(loaded!.runner.backstory).toBe("hiker");
       expect(loaded!.stats.strength.trainingXp).toBe(150);
-      expect(loaded!.version).toBe(6);
+      expect(loaded!.version).toBe(7);
     });
 
     it("should preserve all top-level state fields", () => {

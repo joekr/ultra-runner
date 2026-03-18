@@ -112,15 +112,15 @@ export const DEFAULT_INVENTORY: InventoryState = {
       maxDurability: 9999,
     },
     {
-      id: "apparel_split_shorts_1",
-      templateId: "split_shorts",
+      id: "apparel_basketball_shorts_1",
+      templateId: "basketball_shorts",
       durability: 9999,
       maxDurability: 9999,
     },
   ],
   accessories: [],
   equippedShoe: "shoe_basic_1",
-  equippedApparel: ["apparel_cotton_tee_1", "apparel_split_shorts_1"],
+  equippedApparel: ["apparel_cotton_tee_1", "apparel_basketball_shorts_1"],
   equippedAccessories: [],
   consumables: {},
 };
@@ -184,6 +184,7 @@ export function createNewGame(name: string, backstory: Backstory): GameState {
       previousWeekMileage: 0,
       totalMiles: 0,
       streak: 0,
+      consecutiveRestDays: 0,
       recoveryToolsUsedOnDay: {},
     },
 

@@ -71,29 +71,35 @@
       {
         "tier": 1,
         "name": "Local Club Coach",
-        "weeklyCost": 150,
+        "weeklyCost": 15,
         "xpMultiplier": 1.0,
         "fatigueReduction": 0.10,
         "levelRequired": 1,
-        "description": "Knows the basics. Gets you on a real training plan."
+        "description": "Knows the basics. Gets you on a real training plan.",
+        "planName": "Beginner Plan",
+        "plan": ["easy_run", "rest", "easy_run", "rest", "easy_run", "long_run", "rest"]
       },
       {
         "tier": 2,
         "name": "Certified Running Coach",
-        "weeklyCost": 400,
+        "weeklyCost": 40,
         "xpMultiplier": 1.0,
         "fatigueReduction": 0.20,
         "levelRequired": 5,
-        "description": "RRCA certified. Periodization, pacing, the works."
+        "description": "RRCA certified. Periodization, pacing, the works.",
+        "planName": "Intermediate Plan",
+        "plan": ["easy_run", "intervals", "easy_run", "tempo_run", "rest", "long_run", "easy_run"]
       },
       {
         "tier": 3,
         "name": "Elite Coach",
-        "weeklyCost": 800,
+        "weeklyCost": 80,
         "xpMultiplier": 1.1,
         "fatigueReduction": 0.30,
         "levelRequired": 15,
-        "description": "Coached olympians. Now they'll coach you."
+        "description": "Coached olympians. Now they'll coach you.",
+        "planName": "Elite Plan",
+        "plan": ["easy_run", "hill_repeats", "easy_run", "tempo_run", "intervals", "long_run", "rest"]
       }
     ]
   }

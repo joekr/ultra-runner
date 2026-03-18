@@ -117,10 +117,9 @@ export function tickInjuryRecovery(
 ): Injury[] {
   return injuries
     .map((inj) => {
-      let remaining = inj.daysRemaining - 1;
-      if (isRestDay) {
-        remaining = Math.max(0, Math.floor(remaining - 0.5));
-      }
+      // Rest days heal 1.5 days, training days heal 1 day
+      const healAmount = isRestDay ? 1.5 : 1;
+      const remaining = Math.max(0, inj.daysRemaining - healAmount);
       return { ...inj, daysRemaining: remaining };
     })
     .filter((inj) => inj.daysRemaining > 0);

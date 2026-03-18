@@ -49,7 +49,7 @@ describe("getShoeTemplates", () => {
 describe("getApparelTemplates", () => {
   it("returns all apparel templates from gear.json", () => {
     const apparel = getApparelTemplates();
-    expect(apparel.length).toBe(8);
+    expect(apparel.length).toBe(9);
     expect(apparel.map((a) => a.id)).toContain("cotton_tee");
     expect(apparel.map((a) => a.id)).toContain("running_socks");
     expect(apparel.map((a) => a.id)).toContain("racing_singlet");

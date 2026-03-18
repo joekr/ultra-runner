@@ -55,6 +55,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
       previousWeekMileage: 0,
       totalMiles: 0,
       streak: 0,
+      consecutiveRestDays: 0,
       recoveryToolsUsedOnDay: {},
     },
     race: { active: null },

@@ -14,6 +14,7 @@ export interface GearTemplate {
   effects: Record<string, number>;
   description: string;
   slot: "shoes" | "apparel" | "accessories";
+  equipSlot?: string; // e.g. "top", "bottom", "socks", "head", "watch", "recovery", "light"
 }
 
 // ── Consumable Template Type ────────────────────────────────────────
@@ -25,7 +26,8 @@ export interface ConsumableTemplate {
   cost: number;
   description: string;
   effects: { fatigueReduction: number };
-  requiredNutritionIQ: number;  // minimum Nutrition IQ stat value to buy/use
+  fuelCategory: "gel" | "chew" | "food" | "drink";
+  requiredNutritionIQ: number;
   stackable: boolean;
 }
 
@@ -40,12 +42,14 @@ const shoeTemplates: GearTemplate[] = gearData.shoes.map((s) => ({
 const apparelTemplates: GearTemplate[] = gearData.apparel.map((a) => ({
   ...a,
   effects: a.effects as unknown as Record<string, number>,
+  equipSlot: (a as any).equipSlot as string | undefined,
   slot: "apparel" as const,
 }));
 
 const accessoryTemplates: GearTemplate[] = gearData.accessories.map((a) => ({
   ...a,
   effects: a.effects as unknown as Record<string, number>,
+  equipSlot: (a as any).equipSlot as string | undefined,
   slot: "accessories" as const,
 }));
 
@@ -63,6 +67,7 @@ const consumableTemplates: ConsumableTemplate[] = (
   cost: c.cost,
   description: c.description,
   effects: { fatigueReduction: c.effects.fatigueReduction },
+  fuelCategory: (c as any).fuelCategory ?? "gel",
   requiredNutritionIQ: c.requiredNutritionIQ ?? 0,
   stackable: c.stackable,
 }));
@@ -138,9 +143,24 @@ export function equipApparel(gearId: string, inventory: InventoryState): Invento
   if (inventory.equippedApparel.includes(gearId)) {
     return inventory; // already equipped
   }
+
+  // Unequip any item in the same slot (can't wear two shirts)
+  const newItemTemplate = getGearTemplate(item.templateId);
+  const newItemSlot = newItemTemplate?.equipSlot;
+  let newEquipped = [...inventory.equippedApparel];
+  if (newItemSlot) {
+    newEquipped = newEquipped.filter((equippedId) => {
+      const equippedItem = inventory.apparel.find((a) => a.id === equippedId);
+      if (!equippedItem) return true;
+      const equippedTemplate = getGearTemplate(equippedItem.templateId);
+      return equippedTemplate?.equipSlot !== newItemSlot;
+    });
+  }
+  newEquipped.push(gearId);
+
   return {
     ...inventory,
-    equippedApparel: [...inventory.equippedApparel, gearId],
+    equippedApparel: newEquipped,
   };
 }
 
@@ -159,9 +179,24 @@ export function equipAccessory(gearId: string, inventory: InventoryState): Inven
   if (inventory.equippedAccessories.includes(gearId)) {
     return inventory; // already equipped
   }
+
+  // Unequip any item in the same slot (can't wear two watches)
+  const newItemTemplate = getGearTemplate(item.templateId);
+  const newItemSlot = newItemTemplate?.equipSlot;
+  let newEquipped = [...inventory.equippedAccessories];
+  if (newItemSlot) {
+    newEquipped = newEquipped.filter((equippedId) => {
+      const equippedItem = inventory.accessories.find((a) => a.id === equippedId);
+      if (!equippedItem) return true;
+      const equippedTemplate = getGearTemplate(equippedItem.templateId);
+      return equippedTemplate?.equipSlot !== newItemSlot;
+    });
+  }
+  newEquipped.push(gearId);
+
   return {
     ...inventory,
-    equippedAccessories: [...inventory.equippedAccessories, gearId],
+    equippedAccessories: newEquipped,
   };
 }
 

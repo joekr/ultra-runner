@@ -4,9 +4,8 @@ import { GaugeCircle } from "../components/GaugeCircle";
 import { StatBar } from "../components/StatBar";
 import { Button } from "../components/Button";
 import { canTrainSafely, getPerformancePenalty } from "../systems/injury";
-import { RunnerIcon, FoamRollerIcon, MassageGunIcon, getGearIcon } from "../components/Icons";
-import { getGearTemplate, getShoeCondition } from "../systems/gear";
-import { ProgressBar } from "../components/ProgressBar";
+import { RunnerIcon, FoamRollerIcon, MassageGunIcon } from "../components/Icons";
+import { EquippedLoadout } from "../components/EquippedLoadout";
 import { save } from "../engine/saveManager";
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -128,38 +127,10 @@ export function Dashboard() {
       </div>
 
       <div class="dashboard__section">
-        {/* Equipped shoe */}
-        {(() => {
-          const equippedShoe = inventory.shoes.find((s) => s.id === inventory.equippedShoe);
-          if (!equippedShoe) return (
-            <div class="card" style={{ marginBottom: "var(--space-3)", borderLeft: "3px solid #c0392b" }}>
-              <div style={{ fontSize: "var(--text-sm)", color: "#c0392b" }}>No shoes equipped!</div>
-            </div>
-          );
-          const template = getGearTemplate(equippedShoe.templateId);
-          const condition = getShoeCondition(equippedShoe);
-          const barColor = condition.isWorn ? "#c0392b" : condition.durabilityPct < 0.4 ? "#d4a017" : "var(--color-sage)";
-          return (
-            <div class="card" style={{ marginBottom: "var(--space-3)", display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-              {getGearIcon(equippedShoe.templateId, 28, barColor)}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: "var(--text-sm)", fontWeight: 600 }}>
-                  {template?.name ?? equippedShoe.templateId}
-                </div>
-                <ProgressBar
-                  value={condition.durabilityPct}
-                  label={`${Math.round(equippedShoe.durability)} / ${equippedShoe.maxDurability} mi`}
-                  color={barColor}
-                />
-              </div>
-              {condition.isWorn && (
-                <div style={{ fontSize: "var(--text-xs)", color: "#c0392b", fontWeight: 600, whiteSpace: "nowrap" }}>
-                  Replace!
-                </div>
-              )}
-            </div>
-          );
-        })()}
+        <div class="screen__subheader">Equipped Gear</div>
+        <div class="card" style={{ marginBottom: "var(--space-3)" }}>
+          <EquippedLoadout />
+        </div>
 
         <div class="screen__subheader">Runner Stats</div>
         <StatBar label="Endurance" value={stats.endurance} color="var(--color-sage)" />
@@ -193,6 +164,19 @@ export function Dashboard() {
                 Total performance penalty: -{Math.round(injuryPenalty * 100)}%
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Detraining warning */}
+      {(state.training.consecutiveRestDays ?? 0) > 2 && (
+        <div class="dashboard__section">
+          <div class="card" style={{ borderLeft: "3px solid #8e44ad" }}>
+            <div style={{ fontSize: "var(--text-sm)", color: "#8e44ad" }}>
+              {(state.training.consecutiveRestDays ?? 0) > 3
+                ? `Detraining! ${state.training.consecutiveRestDays} rest days in a row. Stats are declining. Get back to training!`
+                : "3 rest days in a row. One more and your fitness will start declining."}
+            </div>
           </div>
         </div>
       )}

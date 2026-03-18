@@ -37,7 +37,7 @@
       "tier": 4,
       "cost": 250,
       "durability": 150,
-      "effects": { "speedBonus": 0.08, "terrain": "flat_road" },
+      "effects": { "speedBonus": 0.12, "terrain": "flat_road" },
       "description": "Carbon-plated super shoe. 4% faster on roads. Fragile."
     },
     {
@@ -46,7 +46,7 @@
       "tier": 4,
       "cost": 200,
       "durability": 300,
-      "effects": { "speedBonus": 0.12, "terrain": "rolling_hills" },
+      "effects": { "speedBonus": 0.08, "terrain": "rolling_hills" },
       "description": "Aggressive lugs, rock plate. Made for the mountains."
     },
     {
@@ -67,6 +67,7 @@
       "cost": 0,
       "durability": 9999,
       "effects": { "chafePenalty": 0.05 },
+      "equipSlot": "top",
       "description": "The shirt you already own. Cotton kills, but it's free."
     },
     {
@@ -76,7 +77,18 @@
       "cost": 45,
       "durability": 9999,
       "effects": { "fatigueReduction": 0.03 },
+      "equipSlot": "top",
       "description": "Moisture-wicking. The first upgrade every runner makes. Keeps you cooler, run longer."
+    },
+    {
+      "id": "basketball_shorts",
+      "name": "Basketball Shorts",
+      "tier": 0,
+      "cost": 0,
+      "durability": 9999,
+      "effects": { "fatigueReduction": -0.01 },
+      "equipSlot": "bottom",
+      "description": "Heavy, baggy, and not meant for running. But hey, they were free."
     },
     {
       "id": "split_shorts",
@@ -85,6 +97,7 @@
       "cost": 40,
       "durability": 9999,
       "effects": { "speedBonus": 0.01, "fatigueReduction": 0.02 },
+      "equipSlot": "bottom",
       "description": "Built-in liner. No underwear required. Lighter and faster than anything in your closet."
     },
     {
@@ -94,6 +107,7 @@
       "cost": 15,
       "durability": 9999,
       "effects": { "blistReduction": 0.3 },
+      "equipSlot": "socks",
       "description": "Thin, moisture-wicking, and worth every penny."
     },
     {
@@ -103,6 +117,7 @@
       "cost": 55,
       "durability": 9999,
       "effects": { "speedBonus": 0.02 },
+      "equipSlot": "top",
       "description": "Lightweight race-day singlet. Every gram counts."
     },
     {
@@ -112,6 +127,7 @@
       "cost": 120,
       "durability": 9999,
       "effects": { "weatherProtection": 0.3 },
+      "equipSlot": "top",
       "description": "Packable and breathable. Required gear for some races."
     },
     {
@@ -121,6 +137,7 @@
       "cost": 25,
       "durability": 9999,
       "effects": { "heatProtection": 0.2 },
+      "equipSlot": "head",
       "description": "Keeps the sun off your face. Surprisingly important."
     },
     {
@@ -130,6 +147,7 @@
       "cost": 35,
       "durability": 9999,
       "effects": { "blistReduction": 0.4, "recoveryBonus": 0.05 },
+      "equipSlot": "socks",
       "description": "Graduated compression. Recovery starts during the run."
     }
   ],
@@ -141,6 +159,7 @@
       "cost": 150,
       "durability": 9999,
       "effects": { "xpBonus": 0.1 },
+      "equipSlot": "watch",
       "description": "Track your pace, distance, and heart rate. The first real upgrade."
     },
     {
@@ -150,6 +169,7 @@
       "cost": 350,
       "durability": 9999,
       "effects": { "xpBonus": 0.2 },
+      "equipSlot": "watch",
       "description": "Training load, recovery advisor, route mapping. Data nerd paradise."
     },
     {
@@ -159,6 +179,7 @@
       "cost": 30,
       "durability": 9999,
       "effects": { "recoveryBonus": 0.1 },
+      "equipSlot": "recovery",
       "description": "Hurts so good. Speeds up recovery between workouts."
     },
     {
@@ -168,6 +189,7 @@
       "cost": 120,
       "durability": 9999,
       "effects": { "recoveryBonus": 0.15 },
+      "equipSlot": "recovery",
       "description": "Percussive therapy. Your muscles will thank you."
     },
     {
@@ -177,6 +199,7 @@
       "cost": 40,
       "durability": 9999,
       "effects": { "nightBonus": 0.1 },
+      "equipSlot": "light",
       "description": "200 lumens. Enough for dark morning runs."
     }
   ],
@@ -188,6 +211,7 @@
       "cost": 3,
       "description": "Basic energy gel. 100 calories of quick fuel. Tastes like sweet paste.",
       "effects": { "fatigueReduction": 5 },
+      "fuelCategory": "gel",
       "requiredNutritionIQ": 0,
       "stackable": true
     },
@@ -198,6 +222,7 @@
       "cost": 3,
       "description": "Mix into your water. Keeps the cramps away.",
       "effects": { "fatigueReduction": 4 },
+      "fuelCategory": "drink",
       "requiredNutritionIQ": 0,
       "stackable": true
     },
@@ -208,6 +233,7 @@
       "cost": 3,
       "description": "Fruit-flavored energy chews. Easy on the stomach.",
       "effects": { "fatigueReduction": 4 },
+      "fuelCategory": "chew",
       "requiredNutritionIQ": 0,
       "stackable": true
     },
@@ -218,6 +244,7 @@
       "cost": 4,
       "description": "Caffeinated energy gel. The kick when you need it most. Careful — too much caffeine on an untrained gut is trouble.",
       "effects": { "fatigueReduction": 7 },
+      "fuelCategory": "gel",
       "requiredNutritionIQ": 15,
       "stackable": true
     },
@@ -228,6 +255,7 @@
       "cost": 5,
       "description": "Electrolyte gummies with sodium and potassium. Fight the cramps.",
       "effects": { "fatigueReduction": 6 },
+      "fuelCategory": "chew",
       "requiredNutritionIQ": 10,
       "stackable": true
     },
@@ -238,6 +266,7 @@
       "cost": 3,
       "description": "Oat and honey bar. Real food for real miles. Takes a trained gut to digest mid-run.",
       "effects": { "fatigueReduction": 7 },
+      "fuelCategory": "food",
       "requiredNutritionIQ": 15,
       "stackable": true
     },
@@ -248,6 +277,7 @@
       "cost": 4,
       "description": "Dutch caramel waffle. The perfect mid-run treat. Runners swear by these.",
       "effects": { "fatigueReduction": 9 },
+      "fuelCategory": "food",
       "requiredNutritionIQ": 20,
       "stackable": true
     },
@@ -258,6 +288,7 @@
       "cost": 6,
       "description": "Hydrogel technology. Goes down smooth, no water needed. Science in a packet.",
       "effects": { "fatigueReduction": 10 },
+      "fuelCategory": "gel",
       "requiredNutritionIQ": 25,
       "stackable": true
     },
@@ -268,6 +299,7 @@
       "cost": 2,
       "description": "PB&J on white bread. The ultra runner's secret weapon. Cheap, dense, perfect — if your gut can handle solid food at pace.",
       "effects": { "fatigueReduction": 12 },
+      "fuelCategory": "food",
       "requiredNutritionIQ": 30,
       "stackable": true
     },
@@ -278,6 +310,7 @@
       "cost": 1,
       "description": "Salted boiled potato. Sounds weird. Tastes like heaven at mile 50. The cheapest, most effective fuel — but only veterans can stomach it mid-race.",
       "effects": { "fatigueReduction": 14 },
+      "fuelCategory": "food",
       "requiredNutritionIQ": 35,
       "stackable": true
     },
@@ -288,6 +321,7 @@
       "cost": 5,
       "description": "Post-run recovery shake. Protein and carbs in one.",
       "effects": { "fatigueReduction": 8 },
+      "fuelCategory": "drink",
       "requiredNutritionIQ": 10,
       "stackable": true
     }

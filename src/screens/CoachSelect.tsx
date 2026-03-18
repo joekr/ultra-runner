@@ -1,8 +1,20 @@
 import { useState } from "preact/hooks";
 import { gameState } from "../state/gameState";
-import { hireCoach, fireCoach, navigateTo, getCoachTiers } from "../state/actions";
+import { hireCoach, fireCoach, navigateTo, getCoachTiers, updateTrainingPlan } from "../state/actions";
 import { Button } from "../components/Button";
 import { RunnerIcon } from "../components/Icons";
+import type { DayPlan } from "../types";
+
+const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+const WORKOUT_LABELS: Record<string, string> = {
+  easy_run: "Easy",
+  long_run: "Long",
+  intervals: "Speed",
+  tempo_run: "Tempo",
+  hill_repeats: "Hills",
+  rest: "Rest",
+};
 
 const TIER_COLORS: Record<number, string> = {
   1: "var(--color-sage)",
@@ -69,7 +81,22 @@ export function CoachSelect() {
             )}
             <div>Fatigue Reduction: -{Math.round(currentCoach.fatigueReduction * 100)}%</div>
           </div>
-          <Button label="Fire Coach" onClick={handleFire} variant="danger" />
+          <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-2)" }}>
+            <Button
+              label="Adopt Coach's Plan"
+              onClick={() => {
+                const tier = tiers.find((t) => t.tier === currentCoach.tier);
+                if (tier?.plan) {
+                  tier.plan.forEach((workout: string, i: number) => {
+                    updateTrainingPlan(i, workout as DayPlan["workout"]);
+                  });
+                  setMessage(`Applied ${tier.planName}: ${tier.plan.map((w: string) => WORKOUT_LABELS[w] ?? w).join(", ")}`);
+                }
+              }}
+              variant="secondary"
+            />
+            <Button label="Part Ways" onClick={handleFire} variant="secondary" />
+          </div>
         </div>
       )}
 
@@ -123,6 +150,49 @@ export function CoachSelect() {
                 </div>
               )}
             </div>
+
+            {t.plan && (
+              <div style={{
+                background: "var(--color-warm-gray-100, rgba(0,0,0,0.04))",
+                borderRadius: "var(--radius-sm, 6px)",
+                padding: "var(--space-2)",
+                marginBottom: "var(--space-2)",
+              }}>
+                <div style={{
+                  fontSize: "var(--text-xs)",
+                  fontWeight: 700,
+                  color: tierColor,
+                  marginBottom: "var(--space-1)",
+                }}>
+                  {t.planName}
+                </div>
+                <div style={{
+                  display: "flex",
+                  gap: "2px",
+                  fontSize: "10px",
+                }}>
+                  {t.plan.map((workout: string, i: number) => (
+                    <div
+                      key={i}
+                      style={{
+                        flex: 1,
+                        textAlign: "center",
+                        padding: "2px 0",
+                        borderRadius: "3px",
+                        background: workout === "rest"
+                          ? "var(--color-warm-gray-200, rgba(0,0,0,0.08))"
+                          : `${tierColor}22`,
+                        color: workout === "rest" ? "var(--color-text-muted)" : tierColor,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <div style={{ fontSize: "8px", color: "var(--color-text-muted)" }}>{DAY_NAMES[i]}</div>
+                      {WORKOUT_LABELS[workout] ?? workout}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {isCurrentTier ? (
               <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: tierColor }}>

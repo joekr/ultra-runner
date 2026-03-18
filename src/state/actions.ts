@@ -206,6 +206,7 @@ export function endWorkout(): WorkoutCompletionInfo | null {
       previousWeekMileage: newPrevWeekMileage,
       totalMiles: state.training.totalMiles + workoutMiles,
       streak: state.training.streak + 1,
+      consecutiveRestDays: 0,
     },
     flags: {
       ...state.flags,
@@ -270,8 +271,28 @@ export function takeRestDay(): void {
   // Heal injuries on rest days
   const healedInjuries = tickInjuryRecovery(state.injuries, true);
 
+  // Track consecutive rest days
+  const newConsecutiveRestDays = (state.training.consecutiveRestDays ?? 0) + 1;
+
+  // After 3+ consecutive rest days, stats start to decay (detraining)
+  // Each rest day beyond 3 reduces each stat's XP by 0.5% — a gentle but real cost
+  let updatedStats = state.stats;
+  if (newConsecutiveRestDays > 3) {
+    const decayRate = 0.005; // 0.5% per day of detraining
+    updatedStats = { ...state.stats };
+    for (const key of Object.keys(updatedStats) as Array<keyof typeof updatedStats>) {
+      const stat = updatedStats[key];
+      if (stat && typeof stat.trainingXp === "number") {
+        updatedStats[key] = {
+          trainingXp: Math.max(0, stat.trainingXp * (1 - decayRate)),
+        };
+      }
+    }
+  }
+
   let updatedState: GameState = {
     ...state,
+    stats: updatedStats,
     condition: {
       ...state.condition,
       fatigue: Math.max(0, state.condition.fatigue - recoveryAmount),
@@ -289,6 +310,7 @@ export function takeRestDay(): void {
       previousWeekMileage: isNewWeek
         ? state.training.weeklyMileage
         : state.training.previousWeekMileage,
+      consecutiveRestDays: newConsecutiveRestDays,
     },
   };
 
@@ -352,6 +374,7 @@ export function volunteerAtRace(): void {
       previousWeekMileage: isNewWeek
         ? state.training.weeklyMileage
         : state.training.previousWeekMileage,
+      consecutiveRestDays: 0,
     },
     inventory: {
       ...state.inventory,
@@ -465,6 +488,7 @@ export function coachOthers(): void {
       previousWeekMileage: isNewWeek
         ? state.training.weeklyMileage
         : state.training.previousWeekMileage,
+      consecutiveRestDays: 0,
     },
     inventory: {
       ...state.inventory,
@@ -832,6 +856,8 @@ const coachTiers = (balanceData as any).coach.tiers as Array<{
   fatigueReduction: number;
   levelRequired: number;
   description: string;
+  planName: string;
+  plan: string[];
 }>;
 
 export function getCoachTiers() {

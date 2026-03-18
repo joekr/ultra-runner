@@ -160,12 +160,12 @@ describe("tickInjuryRecovery", () => {
     expect(result[0].daysRemaining).toBe(4);
   });
 
-  it("reduces by additional 0.5 (floored) on rest day", () => {
+  it("heals 1.5 days on rest day", () => {
     const injuries = [makeInjury({ daysRemaining: 5 })];
     const result = tickInjuryRecovery(injuries, true);
-    // 5 - 1 = 4, then 4 - 0.5 = 3.5, floor → 3
+    // 5 - 1.5 = 3.5
     expect(result).toHaveLength(1);
-    expect(result[0].daysRemaining).toBe(3);
+    expect(result[0].daysRemaining).toBe(3.5);
   });
 
   it("removes injuries where daysRemaining reaches 0", () => {

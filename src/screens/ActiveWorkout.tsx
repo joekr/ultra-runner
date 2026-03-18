@@ -20,6 +20,7 @@ import { fatigueCurveMultiplier } from "../systems/stats";
 import { getEquippedBonuses, getConsumableTemplate } from "../systems/gear";
 import { getConsumableIcon, RunnerIcon } from "../components/Icons";
 import { RecoveryPanel } from "../components/RecoveryPanel";
+import { EquippedLoadout } from "../components/EquippedLoadout";
 
 function formatMs(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
@@ -135,7 +136,6 @@ export function ActiveWorkout() {
   const [bestStreak, setBestStreak] = useState(0);
   const [isWalking, setIsWalking] = useState(false);
   const [walkingMessage, setWalkingMessage] = useState<string | null>(null);
-  const [showItemPicker, setShowItemPicker] = useState(false);
   const [consumableCooldown, setConsumableCooldown] = useState(false);
   const [consumableMessage, setConsumableMessage] = useState<string | null>(null);
   const consumableMessageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -181,11 +181,15 @@ export function ActiveWorkout() {
     // Reduce fatigue
     const newFatigue = Math.max(0, currentState.condition.fatigue - template.effects.fatigueReduction);
 
-    // Using consumables trains Nutrition IQ (learning what works for your gut)
-    const nutritionXpGain = 10 + template.tier * 5; // tier 1=15xp, tier 2=20xp, tier 3=25xp
+    // Using consumables trains Nutrition IQ + gives a small speed boost
+    const nutritionXpGain = 10 + template.tier * 5;
+    const speedBoost = template.effects.fatigueReduction * 0.5; // half of fatigue reduction as speed XP
     const updatedStats = { ...currentState.stats };
     updatedStats.nutritionIQ = {
       trainingXp: currentState.stats.nutritionIQ.trainingXp + nutritionXpGain,
+    };
+    updatedStats.speed = {
+      trainingXp: currentState.stats.speed.trainingXp + speedBoost,
     };
 
     updateGameState({
@@ -201,7 +205,6 @@ export function ActiveWorkout() {
     });
 
     setFatigue(newFatigue);
-    setShowItemPicker(false);
 
     // Show message
     setConsumableMessage(`+${template.effects.fatigueReduction} fatigue recovered (${template.name})`);
@@ -244,42 +247,70 @@ export function ActiveWorkout() {
       let cResult: CadenceResult;
 
       if (coach?.hired) {
-        // Coached mode: auto sweet_spot, reduced fatigue, coach XP multiplier
-        cResult = { quality: "sweet_spot", multiplier: 1.0, injuryRisk: 0 };
-        setCadence(cResult);
-        setStreak(0); // Streak doesn't apply in coached mode
+        // Coached mode — still affected by walking at high fatigue
 
-        gains = computeStatGains(
-          w.workoutType,
-          cResult,
-          currentFatigue,
-          dtMs,
-        );
-
-        // Apply coach XP multiplier (tier 3 gets 1.1x)
-        if (coach.xpMultiplier !== 1.0) {
-          for (const [stat, val] of Object.entries(gains)) {
-            gains[stat] = val * coach.xpMultiplier;
+        // Auto-transition to walking if fatigue >= 95
+        setIsWalking((wasWalking) => {
+          if (!wasWalking && currentFatigue >= 95) {
+            showWalkingMessage("Too fatigued to run. Walking to recover.");
+            return true;
           }
-        }
+          if (wasWalking && currentFatigue < 80) {
+            showWalkingMessage("Ready to run again!");
+            setIsWalking(false);
+            return false;
+          }
+          return wasWalking;
+        });
 
-        // Compute fatigue with coach reduction
-        const baseFatigue = computeFatigue(
-          w.workoutType,
-          cResult,
-          currentFatigue,
-          statValues.value.recovery,
-          dtMs,
-          fatigueCurveMultiplier(currentState.stats, currentState.runner.level),
-        );
-        // Apply coach fatigue reduction: reduce the fatigue INCREASE
-        const fatigueIncrease = baseFatigue - currentFatigue;
-        if (fatigueIncrease > 0) {
-          newFatigue = currentFatigue + fatigueIncrease * (1 - coach.fatigueReduction);
+        let walkingNow = false;
+        setIsWalking((current) => {
+          walkingNow = current;
+          return current;
+        });
+
+        if (walkingNow) {
+          // Walking mode even with coach — reduced XP, fatigue recovery
+          cResult = { quality: "easy", multiplier: 0, injuryRisk: 0 };
+          setCadence(cResult);
+          gains = computeWalkingStatGains(currentFatigue, dtMs);
+          newFatigue = computeWalkingFatigue(currentFatigue, bonuses.recoveryBonus, dtMs);
         } else {
-          newFatigue = baseFatigue;
+          // Coached running: auto sweet_spot, reduced fatigue, coach XP multiplier
+          cResult = { quality: "sweet_spot", multiplier: 1.0, injuryRisk: 0 };
+          setCadence(cResult);
+
+          gains = computeStatGains(
+            w.workoutType,
+            cResult,
+            currentFatigue,
+            dtMs,
+          );
+
+          // Apply coach XP multiplier (tier 3 gets 1.1x)
+          if (coach.xpMultiplier !== 1.0) {
+            for (const [stat, val] of Object.entries(gains)) {
+              gains[stat] = val * coach.xpMultiplier;
+            }
+          }
+
+          // Compute fatigue with coach reduction
+          const baseFatigue = computeFatigue(
+            w.workoutType,
+            cResult,
+            currentFatigue,
+            statValues.value.recovery,
+            dtMs,
+            fatigueCurveMultiplier(currentState.stats, currentState.runner.level),
+          );
+          const fatigueIncrease = baseFatigue - currentFatigue;
+          if (fatigueIncrease > 0) {
+            newFatigue = currentFatigue + fatigueIncrease * (1 - coach.fatigueReduction);
+          } else {
+            newFatigue = baseFatigue;
+          }
+          newFatigue = Math.min(100, Math.max(0, newFatigue));
         }
-        newFatigue = Math.min(100, Math.max(0, newFatigue));
       } else {
         // Non-coached mode
         // Auto-transition to walking if fatigue >= 95
@@ -610,6 +641,9 @@ export function ActiveWorkout() {
           <div class="active-workout__type">
             {workout.workoutType.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
           </div>
+          <div style={{ marginTop: "var(--space-1)" }}>
+            <EquippedLoadout compact />
+          </div>
         </div>
 
         <div class="active-workout__timer">
@@ -657,24 +691,45 @@ export function ActiveWorkout() {
           </div>
         </div>
 
+        {walkingMessage && (
+          <div class="active-workout__walking-message">
+            {walkingMessage}
+          </div>
+        )}
+
+        {isWalking && bonuses.recoveryBonus > 0 && (
+          <div class="active-workout__recovery-gear">
+            Recovery gear: +{Math.round(bonuses.recoveryBonus * 100)}%
+          </div>
+        )}
+
         <div
-          class="active-workout__tap-zone"
-          style={{
+          class={`active-workout__tap-zone ${isWalking ? "active-workout__tap-zone--walking" : ""}`}
+          style={isWalking ? undefined : {
             backgroundColor: "rgba(34, 87, 102, 0.12)",
             border: "2px solid rgba(93, 173, 226, 0.3)",
             cursor: "default",
             position: "relative",
           }}
         >
-          <RunnerIcon size={48} color="#5dade2" />
-          <div style={{
-            fontSize: "var(--text-sm)",
-            color: "#5dade2",
-            fontWeight: 600,
-            marginTop: "var(--space-2)",
-          }}>
-            Coach {coachName} is training you
-          </div>
+          {isWalking ? (
+            <div class="active-workout__walking-label">
+              <span class="active-workout__tap-text" style={{ color: "var(--color-text-muted)" }}>WALKING</span>
+              <span class="active-workout__walking-sub">recovering...</span>
+            </div>
+          ) : (
+            <>
+              <RunnerIcon size={48} color="#5dade2" />
+              <div style={{
+                fontSize: "var(--text-sm)",
+                color: "#5dade2",
+                fontWeight: 600,
+                marginTop: "var(--space-2)",
+              }}>
+                Coach {coachName} is training you
+              </div>
+            </>
+          )}
           {floats.map((f) => (
             <span
               key={f.id}
@@ -686,7 +741,90 @@ export function ActiveWorkout() {
           ))}
         </div>
 
+        {/* Consumables — same as normal training */}
+        {(() => {
+          const consumables = state.inventory.consumables;
+          const nutritionStat = statValues.value.nutritionIQ ?? 1;
+          const items = Object.entries(consumables).filter(([, qty]) => qty > 0);
+          if (items.length === 0) return null;
+          return (
+            <div style={{ marginBottom: "var(--space-2)" }}>
+              <div style={{
+                fontSize: "var(--text-xs)",
+                fontWeight: 700,
+                color: "var(--color-text-muted)",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                marginBottom: "var(--space-1)",
+                textAlign: "center",
+              }}>
+                Fuel — tap to use
+              </div>
+              <div style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "6px",
+                justifyContent: "center",
+              }}>
+                {items.map(([id, qty]) => {
+                  const tmpl = getConsumableTemplate(id);
+                  if (!tmpl) return null;
+                  const locked = nutritionStat < tmpl.requiredNutritionIQ;
+                  const disabled = consumableCooldown || locked;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => !disabled && handleUseConsumable(id)}
+                      disabled={disabled}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "6px 10px",
+                        borderRadius: "var(--radius-sm, 6px)",
+                        border: "1px solid",
+                        borderColor: disabled ? "var(--color-warm-gray-300)" : "var(--color-sage)",
+                        background: disabled ? "var(--color-warm-gray-100, rgba(0,0,0,0.05))" : "rgba(122, 139, 111, 0.1)",
+                        cursor: disabled ? "not-allowed" : "pointer",
+                        opacity: locked ? 0.4 : consumableCooldown ? 0.6 : 1,
+                        textAlign: "left",
+                      }}
+                    >
+                      {getConsumableIcon(id, 20, disabled ? "var(--color-warm-gray-400)" : "var(--color-sage)")}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: disabled ? "var(--color-text-muted)" : "var(--color-text)",
+                          lineHeight: 1.2,
+                          whiteSpace: "nowrap",
+                        }}>
+                          {tmpl.name} <span style={{ fontWeight: 400, color: "var(--color-text-muted)" }}>x{qty}</span>
+                        </div>
+                        <div style={{
+                          fontSize: "10px",
+                          color: locked ? "#c0392b" : "var(--color-sage)",
+                          lineHeight: 1.2,
+                        }}>
+                          {locked
+                            ? `NutIQ ${tmpl.requiredNutritionIQ} needed`
+                            : `-${tmpl.effects.fatigueReduction} fatigue, +${(tmpl.effects.fatigueReduction * 0.5).toFixed(1)} speed`}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
         <div class="active-workout__bottom-buttons">
+          <Button
+            label={isWalking ? "Run" : "Walk"}
+            onClick={() => setIsWalking(!isWalking)}
+            variant="secondary"
+          />
           <Button
             label="End Workout"
             onClick={() => {
@@ -706,6 +844,9 @@ export function ActiveWorkout() {
       <div class="active-workout__header">
         <div class="active-workout__type">
           {workout.workoutType.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+        </div>
+        <div style={{ marginTop: "var(--space-1)" }}>
+          <EquippedLoadout compact />
         </div>
       </div>
 
@@ -823,70 +964,85 @@ export function ActiveWorkout() {
         </div>
       )}
 
-      {showItemPicker && (
-        <div style={{
-          background: "var(--color-surface, #1a1a1a)",
-          border: "1px solid var(--color-warm-gray-700, #444)",
-          borderRadius: "var(--radius-lg, 12px)",
-          padding: "var(--space-3)",
-          marginBottom: "var(--space-2)",
-        }}>
-          <div style={{ fontWeight: 700, marginBottom: "var(--space-2)" }}>Use Item</div>
-          {(() => {
-            const consumables = state.inventory.consumables;
-            const nutritionStat = statValues.value.nutritionIQ ?? 1;
-            const items = Object.entries(consumables).filter(([, qty]) => qty > 0);
-            if (items.length === 0) {
-              return <div style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>No consumables owned. Buy some from the shop.</div>;
-            }
-            return items.map(([id, qty]) => {
-              const tmpl = getConsumableTemplate(id);
-              if (!tmpl) return null;
-              const locked = nutritionStat < tmpl.requiredNutritionIQ;
-              return (
-                <div key={id} style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--space-2)",
-                  padding: "var(--space-1) 0",
-                  borderBottom: "1px solid var(--color-warm-gray-800, #333)",
-                  opacity: locked ? 0.5 : 1,
-                }}>
-                  {getConsumableIcon(id, 24, locked ? "var(--color-warm-gray-400)" : "var(--color-sage)")}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: "var(--text-sm)", fontWeight: 600 }}>{tmpl.name} x{qty}</div>
-                    {locked ? (
-                      <div style={{ fontSize: "var(--text-xs)", color: "#c0392b" }}>
-                        Nutrition IQ {tmpl.requiredNutritionIQ} needed (yours: {Math.round(nutritionStat)})
+      {/* Consumables — always visible when items owned */}
+      {(() => {
+        const consumables = state.inventory.consumables;
+        const nutritionStat = statValues.value.nutritionIQ ?? 1;
+        const items = Object.entries(consumables).filter(([, qty]) => qty > 0);
+        if (items.length === 0) return null;
+        return (
+          <div style={{ marginBottom: "var(--space-2)" }}>
+            <div style={{
+              fontSize: "var(--text-xs)",
+              fontWeight: 700,
+              color: "var(--color-text-muted)",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              marginBottom: "var(--space-1)",
+              textAlign: "center",
+            }}>
+              Fuel — tap to use
+            </div>
+            <div style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "6px",
+              justifyContent: "center",
+            }}>
+              {items.map(([id, qty]) => {
+                const tmpl = getConsumableTemplate(id);
+                if (!tmpl) return null;
+                const locked = nutritionStat < tmpl.requiredNutritionIQ;
+                const disabled = consumableCooldown || locked;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => !disabled && handleUseConsumable(id)}
+                    disabled={disabled}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 10px",
+                      borderRadius: "var(--radius-sm, 6px)",
+                      border: "1px solid",
+                      borderColor: disabled ? "var(--color-warm-gray-300)" : "var(--color-sage)",
+                      background: disabled ? "var(--color-warm-gray-100, rgba(0,0,0,0.05))" : "rgba(122, 139, 111, 0.1)",
+                      cursor: disabled ? "not-allowed" : "pointer",
+                      opacity: locked ? 0.4 : consumableCooldown ? 0.6 : 1,
+                      textAlign: "left",
+                    }}
+                  >
+                    {getConsumableIcon(id, 20, disabled ? "var(--color-warm-gray-400)" : "var(--color-sage)")}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        color: disabled ? "var(--color-text-muted)" : "var(--color-text)",
+                        lineHeight: 1.2,
+                        whiteSpace: "nowrap",
+                      }}>
+                        {tmpl.name} <span style={{ fontWeight: 400, color: "var(--color-text-muted)" }}>x{qty}</span>
                       </div>
-                    ) : (
-                      <div style={{ fontSize: "var(--text-xs)", color: "var(--color-sage)" }}>-{tmpl.effects.fatigueReduction} fatigue</div>
-                    )}
-                  </div>
-                  <Button
-                    label="Use"
-                    onClick={() => handleUseConsumable(id)}
-                    disabled={consumableCooldown || locked}
-                  />
-                </div>
-              );
-            });
-          })()}
-          <div style={{ marginTop: "var(--space-2)" }}>
-            <Button label="Cancel" onClick={() => setShowItemPicker(false)} variant="secondary" />
+                      <div style={{
+                        fontSize: "10px",
+                        color: locked ? "#c0392b" : "var(--color-sage)",
+                        lineHeight: 1.2,
+                      }}>
+                        {locked
+                          ? `NutIQ ${tmpl.requiredNutritionIQ} needed`
+                          : `-${tmpl.effects.fatigueReduction} fatigue, +${(tmpl.effects.fatigueReduction * 0.5).toFixed(1)} speed`}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       <div class="active-workout__bottom-buttons">
-        {(isWalking || fatigue > 50) && !showItemPicker && (
-          <Button
-            label="Use Item"
-            onClick={() => setShowItemPicker(true)}
-            variant="secondary"
-            disabled={consumableCooldown}
-          />
-        )}
         <Button
           label={isWalking ? "Run" : "Walk"}
           onClick={() => {
