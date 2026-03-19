@@ -87,6 +87,9 @@ function isConditionMet(ach: AchievementDef, state: GameState): boolean {
     case "all_races_in_tier":
       return checkAllRacesInTier(state, cv);
 
+    case "race_flag":
+      return !!(state.flags.raceAchievementFlags ?? {})[cv.flag as string];
+
     default:
       return false;
   }

@@ -210,6 +210,7 @@ export function createNewGame(name: string, backstory: Backstory): GameState {
       firstMarathonComplete: false,
       sponsoredRunTier: 0,
       unlockedDistances: ["5k"],
+      raceAchievementFlags: {},
     },
 
     settings: {

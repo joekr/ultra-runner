@@ -218,6 +218,7 @@ export interface FlagState {
   firstMarathonComplete: boolean;
   sponsoredRunTier: number; // 0=locked, 1=marathon, 2=50k, 3=50mi, 4=100mi
   unlockedDistances: string[];
+  raceAchievementFlags: Record<string, boolean>; // e.g. helpedRunner, finishedWithBlister
 }
 
 // ── Settings ──────────────────────────────────────────────────────────

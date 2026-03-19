@@ -14,7 +14,7 @@ import eventsData from "../data/events.json";
 import { fatigueCurveMultiplier } from "../systems/stats";
 import { statValues } from "../state/gameState";
 import { EquippedLoadout } from "../components/EquippedLoadout";
-import { getConsumableTemplate } from "../systems/gear";
+import { getConsumableTemplate, getEquippedBonuses } from "../systems/gear";
 import type { ConsumableTemplate } from "../systems/gear";
 import { getConsumableIcon } from "../components/Icons";
 import { xpToStat } from "../state/gameState";
@@ -80,6 +80,7 @@ export function ActiveRace() {
   const [showAidStation, setShowAidStation] = useState(false);
   const [showFuelPicker, setShowFuelPicker] = useState(false);
   const [usedCategoriesThisSegment, setUsedCategoriesThisSegment] = useState<Set<string>>(new Set());
+  const [segmentsWithFuel, setSegmentsWithFuel] = useState(0);
   const [fuelMessage, setFuelMessage] = useState<string | null>(null);
   const [raceResult, setRaceResult] = useState<RaceCompletionInfo | null>(null);
   const [dnfResult, setDnfResult] = useState<DNFCompletionInfo | null>(null);
@@ -117,7 +118,14 @@ export function ActiveRace() {
   function choosePace(pace: Pace) {
     if (!state || !activeRace || raceResult || dnfResult) return;
 
-    // Simple segment simulation
+    // Get equipped gear bonuses
+    const gearBonuses = state ? getEquippedBonuses(state.inventory) : {
+      speedBonus: 0, terrainBonuses: {}, blistReduction: 0, chafePenalty: 0,
+      weatherProtection: 0, heatProtection: 0, recoveryBonus: 0, xpBonus: 0, nightBonus: 0,
+      fatigueReduction: 0,
+    };
+
+    // Segment time: base pace modified by pace choice, fatigue, and gear speed bonus
     const paceModifiers: Record<Pace, number> = {
       conservative: 1.15,
       steady: 1.0,
@@ -125,8 +133,9 @@ export function ActiveRace() {
     };
 
     const basePace = 600; // 10 min/mi base in seconds
+    const gearSpeedMod = 1 - (gearBonuses.speedBonus ?? 0); // e.g., 0.12 speed bonus = 0.88 multiplier (faster)
     const segmentTime = Math.round(
-      basePace * paceModifiers[pace] * (1 + activeRace.fatigue / 200),
+      basePace * paceModifiers[pace] * gearSpeedMod * (1 + activeRace.fatigue / 200),
     );
 
     const energyCost: Record<Pace, number> = {
@@ -141,9 +150,10 @@ export function ActiveRace() {
       aggressive: 12,
     };
 
-    // Fitness reduces fatigue accumulation during races
+    // Fitness + gear reduce fatigue accumulation during races
     const fitnessMult = state ? fatigueCurveMultiplier(state.stats, state.runner.level) : 1;
-    const fatigueCost = baseFatigueCost[pace] * fitnessMult;
+    const gearFatigueMod = 1 - (gearBonuses.fatigueReduction ?? 0); // apparel fatigue resist
+    const fatigueCost = baseFatigueCost[pace] * fitnessMult * gearFatigueMod;
 
     const moraleDelta: Record<Pace, number> = {
       conservative: 1,
@@ -256,7 +266,23 @@ export function ActiveRace() {
     });
 
     if (isComplete) {
-      // Use the real race completion system
+      // Check fuelEverySegment achievement — 50K+ races (tier 5+) where every segment had fuel
+      const raceTier = raceDef?.tier ?? 1;
+      // +1 because this segment just completed, and the fuel picker comes after choosePace
+      // So we count the current segment's fuel usage from usedCategoriesThisSegment
+      const totalFueled = usedCategoriesThisSegment.size > 0 ? segmentsWithFuel + 1 : segmentsWithFuel;
+      if (raceTier >= 4 && totalFueled >= activeRace.totalSegments) {
+        const s = gameState.value;
+        if (s) {
+          updateGameState({
+            flags: {
+              ...s.flags,
+              raceAchievementFlags: { ...(s.flags.raceAchievementFlags ?? {}), fuelEverySegment: true },
+            },
+          });
+        }
+      }
+
       const info = completeRaceAction();
       if (info) {
         setRaceResult(info);
@@ -354,7 +380,14 @@ export function ActiveRace() {
       },
     });
 
-    setUsedCategoriesThisSegment((prev) => new Set([...prev, tmpl.fuelCategory]));
+    setUsedCategoriesThisSegment((prev) => {
+      const next = new Set([...prev, tmpl.fuelCategory]);
+      // Track if this is the first fuel use this segment
+      if (prev.size === 0) {
+        setSegmentsWithFuel((c) => c + 1);
+      }
+      return next;
+    });
     setFuelMessage(`${tmpl.name} — fatigue -${tmpl.effects.fatigueReduction}, energy +${energyBoost.toFixed(0)}`);
     setTimeout(() => setFuelMessage(null), 2000);
   }
@@ -418,6 +451,20 @@ export function ActiveRace() {
     updateGameState({
       race: { active: updatedRace },
     });
+
+    // Track achievement flags from event choices
+    if (pendingEvent.id === "fellow_runner_down" && index === 0) {
+      // Chose "Stop and help"
+      const s = gameState.value;
+      if (s) {
+        updateGameState({
+          flags: {
+            ...s.flags,
+            raceAchievementFlags: { ...(s.flags.raceAchievementFlags ?? {}), helpedRunner: true },
+          },
+        });
+      }
+    }
 
     // Flash new debuffs
     if (newDebuffs.length > 0) {

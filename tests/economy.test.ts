@@ -93,59 +93,59 @@ describe("buyGear", () => {
 
 describe("racePrize", () => {
   // racePrize(tier, position, totalRunners)
-  // Tier 1 (5K): base = 50
+  // Tier 1 (5K): base = 10
 
   it("1st place gets 2x base", () => {
-    expect(racePrize(1, 1, 100)).toBe(100); // 50 * 2
+    expect(racePrize(1, 1, 100)).toBe(20); // 10 * 2
   });
 
   it("2nd place gets 1.5x base", () => {
-    expect(racePrize(1, 2, 100)).toBe(75); // 50 * 1.5
+    expect(racePrize(1, 2, 100)).toBe(15); // 10 * 1.5
   });
 
   it("3rd place gets 1.25x base", () => {
-    expect(racePrize(1, 3, 100)).toBe(62); // floor(50 * 1.25)
+    expect(racePrize(1, 3, 100)).toBe(12); // floor(10 * 1.25)
   });
 
   it("top 50% gets 1x base", () => {
-    expect(racePrize(1, 40, 100)).toBe(50); // 50 * 1
+    expect(racePrize(1, 40, 100)).toBe(10); // 10 * 1
   });
 
   it("top 75% gets 0.4x base", () => {
-    expect(racePrize(1, 60, 100)).toBe(20); // 50 * 0.4
+    expect(racePrize(1, 60, 100)).toBe(4); // 10 * 0.4
   });
 
-  it("bottom 25% gets 0.1x base", () => {
-    expect(racePrize(1, 90, 100)).toBe(5); // 50 * 0.1
+  it("bottom 25% gets minimum $1", () => {
+    expect(racePrize(1, 90, 100)).toBe(1); // max(1, floor(10 * 0.1))
   });
 
-  // Tier 4 (Marathon): base = 500
-  it("marathon 1st place = 1000", () => {
-    expect(racePrize(4, 1, 500)).toBe(1000); // 500 * 2
+  // Tier 4 (Marathon): base = 75
+  it("marathon 1st place = 150", () => {
+    expect(racePrize(4, 1, 500)).toBe(150); // 75 * 2
   });
 
-  it("marathon 2nd place = 750", () => {
-    expect(racePrize(4, 2, 500)).toBe(750); // 500 * 1.5
+  it("marathon 2nd place = 112", () => {
+    expect(racePrize(4, 2, 500)).toBe(112); // floor(75 * 1.5)
   });
 
-  it("marathon 3rd place = 625", () => {
-    expect(racePrize(4, 3, 500)).toBe(625); // floor(500 * 1.25)
+  it("marathon 3rd place = 93", () => {
+    expect(racePrize(4, 3, 500)).toBe(93); // floor(75 * 1.25)
   });
 
-  it("marathon mid-pack = 500", () => {
-    expect(racePrize(4, 200, 500)).toBe(500); // 500 * 1
+  it("marathon mid-pack = 75", () => {
+    expect(racePrize(4, 200, 500)).toBe(75); // 75 * 1
   });
 
-  it("marathon back of pack = 50", () => {
-    expect(racePrize(4, 450, 500)).toBe(50); // 500 * 0.1
+  it("marathon back of pack = 7", () => {
+    expect(racePrize(4, 450, 500)).toBe(7); // floor(75 * 0.1)
   });
 
   it("podium pays significantly more than back of pack", () => {
     const first = racePrize(4, 1, 500);
     const last = racePrize(4, 490, 500);
-    expect(first).toBe(1000);
-    expect(last).toBe(50);
-    expect(first / last).toBe(20);
+    expect(first).toBe(150);
+    expect(last).toBe(7);
+    expect(first / last).toBeGreaterThan(15);
   });
 });
 

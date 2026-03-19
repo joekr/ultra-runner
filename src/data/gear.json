@@ -57,6 +57,24 @@
       "durability": 500,
       "effects": { "speedBonus": 0.03 },
       "description": "Maximum cushion for maximum miles. Built to last."
+    },
+    {
+      "id": "elite_trainer",
+      "name": "Elite Daily Trainer",
+      "tier": 5,
+      "cost": 350,
+      "durability": 350,
+      "effects": { "speedBonus": 0.06, "fatigueReduction": 0.05 },
+      "description": "The shoe top runners train in. Fast enough to race, comfortable enough for daily miles."
+    },
+    {
+      "id": "super_shoe",
+      "name": "Super Shoe (Next%)",
+      "tier": 5,
+      "cost": 500,
+      "durability": 100,
+      "effects": { "speedBonus": 0.15 },
+      "description": "The fastest shoe ever made. Carbon plate, PEBA foam, 15% speed boost. Burns through in 100 miles. Worth every penny on race day."
     }
   ],
   "apparel": [
@@ -149,6 +167,26 @@
       "effects": { "blistReduction": 0.4, "recoveryBonus": 0.05 },
       "equipSlot": "socks",
       "description": "Graduated compression. Recovery starts during the run."
+    },
+    {
+      "id": "elite_singlet",
+      "name": "Elite Race Kit",
+      "tier": 3,
+      "cost": 200,
+      "durability": 9999,
+      "effects": { "speedBonus": 0.04, "fatigueReduction": 0.05 },
+      "equipSlot": "top",
+      "description": "Ultralight race-day kit. Aerodynamic fit, barely-there weight. What the pros wear."
+    },
+    {
+      "id": "compression_tights",
+      "name": "Compression Tights",
+      "tier": 3,
+      "cost": 150,
+      "durability": 9999,
+      "effects": { "fatigueReduction": 0.06, "speedBonus": 0.02 },
+      "equipSlot": "bottom",
+      "description": "Full-length compression. Reduces muscle vibration, speeds recovery, looks fast."
     }
   ],
   "accessories": [
@@ -201,6 +239,36 @@
       "effects": { "nightBonus": 0.1 },
       "equipSlot": "light",
       "description": "200 lumens. Enough for dark morning runs."
+    },
+    {
+      "id": "recovery_boots",
+      "name": "Compression Recovery Boots",
+      "tier": 3,
+      "cost": 400,
+      "durability": 9999,
+      "effects": { "recoveryBonus": 0.25 },
+      "equipSlot": "recovery",
+      "description": "Pneumatic compression boots. The ultimate recovery tool. Used by every pro team."
+    },
+    {
+      "id": "heart_rate_monitor",
+      "name": "Heart Rate Chest Strap",
+      "tier": 2,
+      "cost": 80,
+      "durability": 9999,
+      "effects": { "xpBonus": 0.08, "fatigueReduction": 0.03 },
+      "equipSlot": "monitor",
+      "description": "Precise heart rate data. Train smarter, not harder. Keeps you in the right zone."
+    },
+    {
+      "id": "hydration_vest",
+      "name": "Hydration Vest",
+      "tier": 3,
+      "cost": 250,
+      "durability": 9999,
+      "effects": { "fatigueReduction": 0.08, "recoveryBonus": 0.05 },
+      "equipSlot": "vest",
+      "description": "2L capacity with flask pockets. Stay hydrated on long runs. Essential for ultras."
     }
   ],
   "consumables": [

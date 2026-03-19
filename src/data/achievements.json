@@ -238,5 +238,45 @@
     "category": "race",
     "conditionType": "race_placement",
     "conditionValue": { "maxPlace": 1 }
+  },
+  {
+    "id": "helped_a_runner",
+    "name": "Good Samaritan",
+    "description": "You stopped to help a fellow runner. The time cost was worth it. This is what the community is about.",
+    "category": "race",
+    "conditionType": "race_flag",
+    "conditionValue": { "flag": "helpedRunner" }
+  },
+  {
+    "id": "trail_runner",
+    "name": "Trail Runner",
+    "description": "Finished a trail race. Dirt under your nails, mud on your shoes, grin on your face.",
+    "category": "race",
+    "conditionType": "race_flag",
+    "conditionValue": { "flag": "finishedTrailRace" }
+  },
+  {
+    "id": "pushed_through_blister",
+    "name": "Tough Feet",
+    "description": "Finished a race with an active blister. Your feet hate you but your heart is proud.",
+    "category": "race",
+    "conditionType": "race_flag",
+    "conditionValue": { "flag": "finishedWithBlister" }
+  },
+  {
+    "id": "barkley_fun_run",
+    "name": "Barkley Fun Run",
+    "description": "Completed 3 loops of the Barkley. Only a handful of humans have done this. You are not normal.",
+    "category": "race",
+    "conditionType": "race_flag",
+    "conditionValue": { "flag": "barkleyFunRun" }
+  },
+  {
+    "id": "big_eater",
+    "name": "Big Eater",
+    "description": "Used fuel every single segment of a 50K+ race. Your gut is an engine. Your nutritionist is proud.",
+    "category": "race",
+    "conditionType": "race_flag",
+    "conditionValue": { "flag": "fuelEverySegment" }
   }
 ]

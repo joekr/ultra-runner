@@ -214,6 +214,7 @@ export interface EquippedBonuses {
   terrainBonuses: Record<string, number>;
   blistReduction: number;
   chafePenalty: number;
+  fatigueReduction: number;
   weatherProtection: number;
   heatProtection: number;
   recoveryBonus: number;
@@ -227,6 +228,7 @@ export function getEquippedBonuses(inventory: InventoryState): EquippedBonuses {
     terrainBonuses: {},
     blistReduction: 0,
     chafePenalty: 0,
+    fatigueReduction: 0,
     weatherProtection: 0,
     heatProtection: 0,
     recoveryBonus: 0,
@@ -276,6 +278,9 @@ export function getEquippedBonuses(inventory: InventoryState): EquippedBonuses {
     }
     if (effects.chafePenalty) {
       result.chafePenalty += effects.chafePenalty;
+    }
+    if (effects.fatigueReduction) {
+      result.fatigueReduction += effects.fatigueReduction;
     }
     if (effects.weatherProtection) {
       result.weatherProtection += effects.weatherProtection;

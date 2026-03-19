@@ -175,10 +175,12 @@ export function endWorkout(): WorkoutCompletionInfo | null {
   const levelInfo = xpToNextLevel(newTotalXp);
   const newUnlocks = checkUnlocks(newLevel, state.flags.unlockedDistances);
 
-  // Passive daily fatigue recovery — even training days recover some fatigue
-  // (simulates sleeping, eating, normal daily recovery)
+  // Passive daily fatigue recovery — simulates overnight sleep/eating
+  // Only recovers a fraction of fatigue so workouts still accumulate over the week
+  // Cap recovery to half of current fatigue at most — you can't fully zero out in one day
   const passiveRecovery = dailyPassiveFatigueRecovery(newStats, newLevel);
-  const fatigueAfterRecovery = Math.max(0, state.condition.fatigue - passiveRecovery);
+  const cappedRecovery = Math.min(passiveRecovery, state.condition.fatigue * 0.4);
+  const fatigueAfterRecovery = Math.max(0, state.condition.fatigue - cappedRecovery);
 
   let updatedState: GameState = {
     ...state,
@@ -492,7 +494,7 @@ export function takeRestDay(): void {
 // ── Volunteer ────────────────────────────────────────────────────────
 
 export function getVolunteerPay(level: number): number {
-  return Math.min(50, 30 + (level - 1) * 5);
+  return Math.min(20, 8 + (level - 1) * 2);
 }
 
 export function volunteerAtRace(): void {
@@ -605,7 +607,7 @@ export function sellGear(gearId: string, slot: "shoes" | "apparel" | "accessorie
 // ── Coach Others ─────────────────────────────────────────────────────
 
 export function getCoachOthersPay(level: number): number {
-  return Math.min(200, 100 + (level - 1) * 5);
+  return Math.min(60, 25 + (level - 1) * 3);
 }
 
 export function coachOthers(): void {
@@ -673,10 +675,10 @@ export function coachOthers(): void {
 // ── Sponsored Training Run ───────────────────────────────────────────
 
 const SPONSORED_RUN_PAYOUTS: Record<number, number> = {
-  1: 25,
-  2: 50,
-  3: 75,
-  4: 100,
+  1: 5,
+  2: 10,
+  3: 15,
+  4: 20,
 };
 
 export function getSponsoredRunPayout(tier: number): number {
@@ -914,6 +916,15 @@ export function completeRaceAction(): RaceCompletionInfo | null {
       unlockedDistances: newUnlocks.length > 0
         ? [...state.flags.unlockedDistances, ...newUnlocks]
         : state.flags.unlockedDistances,
+      raceAchievementFlags: {
+        ...(state.flags.raceAchievementFlags ?? {}),
+        // Trail race finish
+        ...(raceDef && (raceDef.terrain === "rolling_hills" || raceDef.terrain === "steep_climb")
+          ? { finishedTrailRace: true } : {}),
+        // Finished with active blister debuff
+        ...(activeRace.raceDebuffs?.some((d) => d.id === "blister" || d.id === "blister_severe")
+          ? { finishedWithBlister: true } : {}),
+      },
     },
   };
 

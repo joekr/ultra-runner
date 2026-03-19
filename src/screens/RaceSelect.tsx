@@ -1,6 +1,7 @@
 import { gameState } from "../state/gameState";
 import { registerForRace, startRace, withdrawFromRace } from "../state/actions";
 import { Button } from "../components/Button";
+import { racePrize } from "../systems/economy";
 import racesData from "../data/races.json";
 import { MountainIcon } from "../components/Icons";
 
@@ -105,7 +106,7 @@ export function RaceSelect() {
                       : `$${race.entryFee}`}
                   </div>
                   <div class="race-card__prize">
-                    Prize: ${race.basePrize}+
+                    Prize: ${racePrize(race.tier, 1, 100)}-{racePrize(race.tier, 50, 100)}
                   </div>
                 </div>
                 {alreadyRegistered ? (

@@ -331,12 +331,20 @@ export function getGearIcon(templateId: string, size?: number, color?: string): 
     case "sun_hat": return <SunHatIcon size={s} color={c} />;
     case "compression_socks": return <CompressionSocksIcon size={s} color={c} />;
     case "running_socks": return <RunningSocksIcon size={s} color={c} />;
+    case "elite_singlet": return <RacingSingletIcon size={s} color={c} />;
+    case "compression_tights": return <SplitShortsIcon size={s} color={c} />;
+    // Shoes (high tier)
+    case "elite_trainer": return <CushionedShoeIcon size={s} color={c} />;
+    case "super_shoe": return <CarbonRacerIcon size={s} color={c} />;
     // Accessories
     case "gps_watch_basic": return <GpsWatchBasicIcon size={s} color={c} />;
     case "gps_watch_advanced": return <GpsWatchAdvancedIcon size={s} color={c} />;
     case "foam_roller": return <FoamRollerIcon size={s} color={c} />;
     case "massage_gun": return <MassageGunIcon size={s} color={c} />;
     case "headlamp_basic": return <HeadlampIcon size={s} color={c} />;
+    case "recovery_boots": return <CompressionSocksIcon size={s} color={c} />;
+    case "heart_rate_monitor": return <GpsWatchBasicIcon size={s} color={c} />;
+    case "hydration_vest": return <ShirtIcon size={s} color={c} />;
     default: return null;
   }
 }

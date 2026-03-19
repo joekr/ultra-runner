@@ -84,6 +84,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
       firstMarathonComplete: false,
       sponsoredRunTier: 0,
       unlockedDistances: ["5k"],
+      raceAchievementFlags: {},
     },
     settings: {
       soundEnabled: true,

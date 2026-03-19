@@ -6,7 +6,7 @@ import { GaugeCircle } from "../components/GaugeCircle";
 import { StatBar } from "../components/StatBar";
 import { Button } from "../components/Button";
 import { canTrainSafely, getPerformancePenalty } from "../systems/injury";
-import { RunnerIcon, FoamRollerIcon, MassageGunIcon } from "../components/Icons";
+import { RunnerIcon, getGearIcon } from "../components/Icons";
 import { EquippedLoadout } from "../components/EquippedLoadout";
 import { save } from "../engine/saveManager";
 
@@ -121,9 +121,14 @@ export function Dashboard() {
       .filter((a) => (inventory.equippedAccessories ?? []).includes(a.id))
       .map((a) => a.templateId),
   );
-  const hasFoamRoller = equippedTemplateIds.has("foam_roller");
-  const hasMassageGun = equippedTemplateIds.has("massage_gun");
-  const hasAnyRecoveryTool = hasFoamRoller || hasMassageGun;
+  // All recovery tools with their fatigue reduction values
+  const RECOVERY_TOOL_DEFS = [
+    { id: "foam_roller", name: "Foam Roller", reduction: 8 },
+    { id: "massage_gun", name: "Massage Gun", reduction: 12 },
+    { id: "recovery_boots", name: "Recovery Boots", reduction: 18 },
+  ];
+  const equippedRecoveryTools = RECOVERY_TOOL_DEFS.filter((t) => equippedTemplateIds.has(t.id));
+  const hasAnyRecoveryTool = equippedRecoveryTools.length > 0;
 
   // Recovery tool usage persisted in game state (survives page refresh)
   const usedRecovery = state.training.recoveryToolsUsedOnDay ?? {};
@@ -357,34 +362,20 @@ export function Dashboard() {
             <div style={{ fontWeight: 700, marginBottom: "var(--space-2)", color: "#8e44ad", fontSize: "var(--text-sm)" }}>
               Recovery Tools
             </div>
-            {hasFoamRoller && (
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginBottom: "var(--space-2)" }}>
-                <FoamRollerIcon size={24} color="#8e44ad" />
+            {equippedRecoveryTools.map((tool) => (
+              <div key={tool.id} style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginBottom: "var(--space-2)" }}>
+                {getGearIcon(tool.id, 24, "#8e44ad")}
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "var(--text-sm)", fontWeight: 600 }}>Foam Roller</div>
-                  <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>-8 fatigue</div>
+                  <div style={{ fontSize: "var(--text-sm)", fontWeight: 600 }}>{tool.name}</div>
+                  <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>-{tool.reduction} fatigue</div>
                 </div>
-                {usedRecovery["foam_roller"] === calendar.gameDay ? (
+                {usedRecovery[tool.id] === calendar.gameDay ? (
                   <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>Used today</span>
                 ) : (
-                  <Button label="Use" onClick={() => useRecoveryTool("foam_roller", 8)} variant="secondary" />
+                  <Button label="Use" onClick={() => useRecoveryTool(tool.id, tool.reduction)} variant="secondary" />
                 )}
               </div>
-            )}
-            {hasMassageGun && (
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-                <MassageGunIcon size={24} color="#8e44ad" />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "var(--text-sm)", fontWeight: 600 }}>Massage Gun</div>
-                  <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>-12 fatigue</div>
-                </div>
-                {usedRecovery["massage_gun"] === calendar.gameDay ? (
-                  <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>Used today</span>
-                ) : (
-                  <Button label="Use" onClick={() => useRecoveryTool("massage_gun", 12)} variant="secondary" />
-                )}
-              </div>
-            )}
+            ))}
           </div>
         </div>
       )}

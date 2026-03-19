@@ -35,7 +35,7 @@ function makeInventory(overrides?: Partial<InventoryState>): InventoryState {
 describe("getShoeTemplates", () => {
   it("returns all shoe templates from gear.json", () => {
     const shoes = getShoeTemplates();
-    expect(shoes.length).toBe(6);
+    expect(shoes.length).toBe(8);
     expect(shoes.map((s) => s.id)).toContain("basic_trainers");
     expect(shoes.map((s) => s.id)).toContain("cushioned_road");
     expect(shoes.map((s) => s.id)).toContain("trail_shoes");
@@ -49,7 +49,7 @@ describe("getShoeTemplates", () => {
 describe("getApparelTemplates", () => {
   it("returns all apparel templates from gear.json", () => {
     const apparel = getApparelTemplates();
-    expect(apparel.length).toBe(9);
+    expect(apparel.length).toBe(11);
     expect(apparel.map((a) => a.id)).toContain("cotton_tee");
     expect(apparel.map((a) => a.id)).toContain("running_socks");
     expect(apparel.map((a) => a.id)).toContain("racing_singlet");
