@@ -8,7 +8,7 @@ import type {
   CoachState,
 } from "../types";
 import balanceData from "../data/balance.json";
-import { gameState, currentScreen, createNewGame } from "./gameState";
+import { gameState, currentScreen, createNewGame, xpToStat } from "./gameState";
 import { save } from "../engine/saveManager";
 import { createActiveWorkout, completeWorkout as completeWorkoutResult, calculateWeeklyMileageIncrease } from "../systems/training";
 import { calculateInjuryRisk, rollInjury, tickInjuryRecovery, escalateInjury } from "../systems/injury";
@@ -19,8 +19,8 @@ import { getShoeCondition, degradeShoe, getGearTemplate } from "../systems/gear"
 import { mulberry32 } from "../engine/prng";
 import { checkAchievements, getAchievementById } from "../systems/achievements";
 import { pushAchievementNotifications } from "./achievementNotifications";
-import { dailyPassiveFatigueRecovery, restDayFatigueRecovery, describeLevelUp } from "../systems/stats";
-import { computeStatGains } from "../systems/training";
+import { dailyPassiveFatigueRecovery, restDayFatigueRecovery, describeLevelUp, fatigueCurveMultiplier } from "../systems/stats";
+import { computeStatGains, computeFatigue } from "../systems/training";
 
 // ── Navigation ────────────────────────────────────────────────────────
 
@@ -337,31 +337,43 @@ export function trainFullWeek(): WeekTrainingResult {
       continue;
     }
 
-    // Calculate stat gains as if coaching at sweet_spot for the full workout
+    // Simulate a full coached workout: accumulate stat gains AND fatigue
     const sweetSpot = { quality: "sweet_spot" as const, multiplier: 1.0, injuryRisk: 0.02 };
     const totalTicks = Math.floor(workoutDef.durationMs / 100);
     const dayGains: Record<string, number> = {};
+    let simFatigue = state.condition.fatigue;
+    const recoveryStat = xpToStat(state.stats.recovery.trainingXp);
+    const fitMult = fatigueCurveMultiplier(state.stats, state.runner.level);
 
     for (let tick = 0; tick < totalTicks; tick++) {
-      const gains = computeStatGains(plannedWorkout, sweetSpot, state.condition.fatigue, 100);
-      // Apply coach XP multiplier
+      const gains = computeStatGains(plannedWorkout, sweetSpot, simFatigue, 100);
       for (const [stat, val] of Object.entries(gains)) {
         const boosted = val * (state.coach.xpMultiplier ?? 1.0);
         dayGains[stat] = (dayGains[stat] ?? 0) + boosted;
         result.totalStatGains[stat] = (result.totalStatGains[stat] ?? 0) + boosted;
       }
+      // Accumulate fatigue per tick
+      simFatigue = computeFatigue(plannedWorkout, sweetSpot, simFatigue, recoveryStat, 100, fitMult);
     }
 
-    // Create a fake completed workout and apply gains via endWorkout logic
+    // Apply coach fatigue reduction to the total fatigue gained
+    const totalFatigueGained = simFatigue - state.condition.fatigue;
+    if (totalFatigueGained > 0) {
+      simFatigue = state.condition.fatigue + totalFatigueGained * (1 - (state.coach.fatigueReduction ?? 0));
+    }
+    simFatigue = Math.min(100, Math.max(0, simFatigue));
+
+    // Create a fake completed workout
     const workout = createActiveWorkout(plannedWorkout);
-    workout.elapsed = workout.duration; // mark complete
+    workout.elapsed = workout.duration;
     workout.statGainsAccumulated = dayGains;
     workout.sweetSpotHits = totalTicks;
 
-    // Set the workout then end it
+    // Set the workout AND the accumulated fatigue, then end it
     gameState.value = {
       ...state,
       training: { ...state.training, currentWorkout: workout },
+      condition: { ...state.condition, fatigue: simFatigue },
     };
 
     const endResult = endWorkout();
@@ -807,13 +819,30 @@ export function completeRaceAction(): RaceCompletionInfo | null {
   // Advance day — race day is over, move to Sunday
   const { weekDay: newWeekDay, gameDay: newGameDay, season: newSeason } = advanceDay(state.calendar);
 
-  // Race experience trains Nutrition IQ
-  const nutritionXpByTier = [20, 40, 80, 150];
-  const nutritionXpGain = nutritionXpByTier[(tier - 1)] ?? 20;
-  const updatedStats = { ...state.stats };
-  updatedStats.nutritionIQ = {
-    trainingXp: state.stats.nutritionIQ.trainingXp + nutritionXpGain,
+  // Racing builds stats — significantly more than a single training session
+  // Base XP per stat scales with tier (longer races = more gains)
+  const raceStatBase = [30, 60, 120, 200][tier - 1] ?? 30;
+  const isTrailRace = raceDef?.terrain === "rolling_hills" || raceDef?.terrain === "steep_climb";
+  const placementBonus = positionPct <= 0.25 ? 1.5 : positionPct <= 0.5 ? 1.2 : 1.0;
+
+  const raceStatGains = {
+    endurance: raceStatBase * 3,                                    // races are the best endurance builder
+    speed: Math.round(raceStatBase * 1.5 * placementBonus),         // racing fast teaches speed
+    mentalToughness: raceStatBase * 4,                               // races test your mind far more than training
+    strength: Math.round(raceStatBase * (isTrailRace ? 2 : 1)),     // trail races build strength
+    recovery: raceStatBase * 1,                                      // learning to recover mid-race
+    nutritionIQ: [20, 40, 80, 150][tier - 1] ?? 20,                 // fueling experience
   };
+
+  const updatedStats = { ...state.stats };
+  for (const [stat, xp] of Object.entries(raceStatGains)) {
+    const key = stat as keyof typeof updatedStats;
+    if (updatedStats[key]) {
+      updatedStats[key] = {
+        trainingXp: updatedStats[key].trainingXp + xp,
+      };
+    }
+  }
 
   gameState.value = {
     ...state,
@@ -913,6 +942,25 @@ export function dnfRaceAction(reason: string): DNFCompletionInfo | null {
   // Post-race fatigue (reduced for DNF since race wasn't completed)
   const postRaceFatigue = Math.floor((POST_RACE_FATIGUE[tier] ?? 20) * 0.6);
 
+  // DNF still builds stats — you learned something, just at 40% of a finish
+  const dnfStatBase = Math.round(([30, 60, 120, 200][tier - 1] ?? 30) * 0.4);
+  const dnfStatGains = {
+    endurance: dnfStatBase * 2,
+    mentalToughness: dnfStatBase * 5,  // DNFs teach mental toughness more than anything
+    strength: dnfStatBase * 1,
+    recovery: dnfStatBase * 1,
+  };
+
+  const updatedStats = { ...state.stats };
+  for (const [stat, xp] of Object.entries(dnfStatGains)) {
+    const key = stat as keyof typeof updatedStats;
+    if (updatedStats[key]) {
+      updatedStats[key] = {
+        trainingXp: updatedStats[key].trainingXp + xp,
+      };
+    }
+  }
+
   // Advance day — race day is over
   const { weekDay: newWeekDay, gameDay: newGameDay, season: newSeason } = advanceDay(state.calendar);
 
@@ -924,6 +972,7 @@ export function dnfRaceAction(reason: string): DNFCompletionInfo | null {
       level: newLevel,
       xpToNextLevel: levelInfo.needed,
     },
+    stats: updatedStats,
     race: { active: null },
     condition: {
       ...state.condition,
