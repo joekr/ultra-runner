@@ -1,5 +1,5 @@
 import { gameState } from "../state/gameState";
-import { registerForRace, startRace } from "../state/actions";
+import { registerForRace, startRace, withdrawFromRace } from "../state/actions";
 import { Button } from "../components/Button";
 import racesData from "../data/races.json";
 import { MountainIcon } from "../components/Icons";
@@ -176,32 +176,52 @@ export function RaceSelect() {
         );
       })()}
 
-      {upcomingRaces.length > 0 && (
+      {calendar.scheduledRaces.length > 0 && (
         <div class="race-select__registered">
-          <h2 class="screen__subheader">Upcoming Races</h2>
-          {upcomingRaces.map((sr) => {
+          <h2 class="screen__subheader">Registered Races</h2>
+          {calendar.scheduledRaces.map((sr) => {
             const race = races.find((r) => r.id === sr.raceId);
             const daysAway = sr.gameDay - calendar.gameDay;
-            const canStart = daysAway <= 0 && calendar.weekDay === 5; // Saturday only
+            const canStart = daysAway <= 0 && calendar.weekDay === 5;
+            const missed = daysAway < 0;
             return (
-              <div key={sr.raceId + sr.gameDay} class="card" style={{ marginBottom: "var(--space-2)" }}>
+              <div
+                key={sr.raceId + sr.gameDay}
+                class="card"
+                style={{
+                  marginBottom: "var(--space-2)",
+                  borderLeft: missed ? "3px solid #c0392b" : canStart ? "3px solid var(--color-terracotta)" : undefined,
+                }}
+              >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <strong>{race?.name ?? sr.raceId}</strong>
-                    <div style={{ fontSize: "var(--text-sm)", color: canStart ? "var(--color-terracotta)" : "var(--color-text-muted)" }}>
-                      {canStart
-                        ? "Race day!"
-                        : daysAway === 1
-                          ? "Saturday (Tomorrow)"
-                          : `Saturday (${daysAway} days away)`}
+                    <div style={{
+                      fontSize: "var(--text-sm)",
+                      color: missed ? "#c0392b" : canStart ? "var(--color-terracotta)" : "var(--color-text-muted)",
+                    }}>
+                      {missed
+                        ? "Missed — race day has passed"
+                        : canStart
+                          ? "Race day!"
+                          : daysAway === 1
+                            ? "Saturday (Tomorrow)"
+                            : `Saturday (${daysAway} days away)`}
                     </div>
                   </div>
-                  {canStart && (
+                  <div style={{ display: "flex", gap: "var(--space-1)" }}>
+                    {canStart && (
+                      <Button
+                        label="Start Race"
+                        onClick={() => startRace(sr.raceId)}
+                      />
+                    )}
                     <Button
-                      label="Start Race"
-                      onClick={() => startRace(sr.raceId)}
+                      label={missed ? "Clear" : "Withdraw"}
+                      onClick={() => withdrawFromRace(sr.raceId)}
+                      variant={missed ? "danger" : "secondary"}
                     />
-                  )}
+                  </div>
                 </div>
               </div>
             );

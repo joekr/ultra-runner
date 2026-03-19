@@ -12,6 +12,7 @@ import { AidStationPanel } from "../components/AidStationPanel";
 import racesData from "../data/races.json";
 import eventsData from "../data/events.json";
 import { fatigueCurveMultiplier } from "../systems/stats";
+import { statValues } from "../state/gameState";
 import { EquippedLoadout } from "../components/EquippedLoadout";
 import { getConsumableTemplate } from "../systems/gear";
 import type { ConsumableTemplate } from "../systems/gear";
@@ -24,6 +25,7 @@ interface RaceDefinition {
   id: string;
   name: string;
   distance: number;
+  tier: number;
   segments: number;
   segmentDefinitions: Array<{ terrain: string; hasAidStation: boolean }>;
 }
@@ -156,9 +158,43 @@ export function ActiveRace() {
       Math.min(100, activeRace.morale + moraleDelta[pace]),
     );
 
-    // Position delta (simplified)
-    const positionDelta =
-      pace === "aggressive" ? -3 : pace === "conservative" ? 2 : 0;
+    // Position delta — stats matter!
+    // Base movement from pace choice
+    const pacePositionBase: Record<Pace, number> = {
+      conservative: 1,   // barely moving up
+      steady: -1,         // slightly gaining
+      aggressive: -3,     // pushing hard
+    };
+
+    // Stat bonus: speed and endurance determine how many people you pass
+    // A runner with speed 50 on steady should be passing ~3-4 people per segment
+    // A runner with speed 10 on aggressive barely passes anyone
+    const sv = statValues.value;
+    const enduranceFactor = (sv.endurance - 25) / 50; // helps sustain position over segments
+
+    // Fatigue penalty: tired runners lose positions
+    const fatiguePenalty = activeRace.fatigue > 70 ? Math.round((activeRace.fatigue - 70) / 10) : 0;
+
+    // Race tier — tougher competition at longer distances
+    // 5K: casual joggers, walkers, costumes (easy to place well)
+    // 10K: slightly more serious, some trained runners
+    // Half: trained runners, competitive mid-pack
+    // Marathon: very competitive, everyone trained hard to be here
+    const raceDef = (racesData as RaceDefinition[]).find((r) => r.id === activeRace.raceId);
+    const tier = raceDef?.tier ?? 1;
+
+    // NPC field "average stat" by tier — this is what you're racing against
+    // Tier 1 (5K): avg speed ~15, Tier 2 (10K): ~25, Tier 3 (Half): ~40, Tier 4 (Marathon): ~55
+    const fieldStrength = [15, 25, 40, 55][tier - 1] ?? 15;
+    const advantageOverField = (sv.speed - fieldStrength) / 15; // positive = you're faster than the field
+
+    // Combine: pace base + stat advantage + endurance sustain - fatigue drag
+    const positionDelta = Math.round(
+      pacePositionBase[pace]
+      + advantageOverField * 4          // each 15 speed above field = ~4 positions/segment
+      + enduranceFactor * 1.5           // endurance helps sustain
+      - fatiguePenalty                  // tired = losing positions
+    );
     const newPosition = Math.max(
       1,
       Math.min(activeRace.totalRunners, activeRace.position + positionDelta),

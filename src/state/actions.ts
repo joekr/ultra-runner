@@ -299,11 +299,20 @@ export function trainFullWeek(): WeekTrainingResult {
       break;
     }
 
-    // Stop if it's Saturday (race day)
+    // Saturday handling — stop if there's a race, otherwise rest and continue
     if (state.calendar.weekDay === 5) {
-      result.stoppedEarly = true;
-      result.stopReason = "Saturday — time to race!";
-      break;
+      const hasRace = state.calendar.scheduledRaces.some(
+        (sr) => sr.gameDay <= state.calendar.gameDay,
+      );
+      if (hasRace) {
+        result.stoppedEarly = true;
+        result.stopReason = "Saturday — time to race!";
+        break;
+      }
+      // No race this Saturday — rest and continue
+      takeRestDay();
+      result.daysCompleted++;
+      continue;
     }
 
     // Stop if fatigue too high
@@ -718,6 +727,23 @@ export function registerForRace(raceId: string, entryFee: number): void {
         ...state.calendar.scheduledRaces,
         { raceId, gameDay: nextRaceDay(state.calendar.gameDay, state.calendar.weekDay) },
       ],
+    },
+  };
+
+  save(gameState.value);
+}
+
+export function withdrawFromRace(raceId: string): void {
+  const state = gameState.value;
+  if (!state) return;
+
+  gameState.value = {
+    ...state,
+    calendar: {
+      ...state.calendar,
+      scheduledRaces: state.calendar.scheduledRaces.filter(
+        (sr) => sr.raceId !== raceId,
+      ),
     },
   };
 
