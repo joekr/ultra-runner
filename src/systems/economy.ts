@@ -91,7 +91,7 @@ export function buyConsumable(
 
 // ── Race prizes ──────────────────────────────────────────────────────
 
-const BASE_PRIZES = [10, 20, 40, 75]; // tiers 1-4 (scaled down significantly)
+const BASE_PRIZES = [10, 20, 40, 75, 100, 125, 150, 200, 300, 0]; // tiers 1-10 (Barkley has no prize)
 
 export function racePrize(tier: number, position: number, _totalRunners: number): number {
   const basePrize = BASE_PRIZES[tier - 1] ?? 0;

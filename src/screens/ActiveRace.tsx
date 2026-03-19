@@ -17,6 +17,7 @@ import { EquippedLoadout } from "../components/EquippedLoadout";
 import { getConsumableTemplate, getEquippedBonuses } from "../systems/gear";
 import type { ConsumableTemplate } from "../systems/gear";
 import { getConsumableIcon } from "../components/Icons";
+import { TrailMap } from "../components/TrailMap";
 import { xpToStat } from "../state/gameState";
 
 type Pace = "conservative" | "steady" | "aggressive";
@@ -26,6 +27,7 @@ interface RaceDefinition {
   name: string;
   distance: number;
   tier: number;
+  terrain: string;
   segments: number;
   segmentDefinitions: Array<{ terrain: string; hasAidStation: boolean }>;
 }
@@ -195,15 +197,17 @@ export function ActiveRace() {
 
     // NPC field "average stat" by tier — this is what you're racing against
     // Tier 1 (5K): avg speed ~15, Tier 2 (10K): ~25, Tier 3 (Half): ~40, Tier 4 (Marathon): ~55
-    const fieldStrength = [15, 25, 40, 55][tier - 1] ?? 15;
+    // NPC field strength by tier — higher tiers = tougher competition
+    const fieldStrength = [15, 25, 40, 55, 60, 65, 70, 75, 80, 85][tier - 1] ?? 15;
     const advantageOverField = (sv.speed - fieldStrength) / 15; // positive = you're faster than the field
 
     // Combine: pace base + stat advantage + endurance sustain - fatigue drag
+    // Negative = moving toward 1st place, positive = falling back
     const positionDelta = Math.round(
       pacePositionBase[pace]
-      + advantageOverField * 4          // each 15 speed above field = ~4 positions/segment
-      + enduranceFactor * 1.5           // endurance helps sustain
-      - fatiguePenalty                  // tired = losing positions
+      - advantageOverField * 4          // faster than field = gain positions (negative)
+      - enduranceFactor * 1.5           // endurance helps sustain
+      + fatiguePenalty                  // tired = losing positions (positive)
     );
     const newPosition = Math.max(
       1,
@@ -515,7 +519,6 @@ export function ActiveRace() {
   function renderFinishScreen() {
     if (!raceResult) return null;
     const { result, leveledUp, newLevel, newUnlocks, levelPerks } = raceResult;
-    const percentile = Math.round((result.position / result.totalRunners) * 100);
 
     return (
       <div class="active-race" style={{ padding: "var(--space-6)" }}>
@@ -547,7 +550,7 @@ export function ActiveRace() {
             color: "var(--color-text-muted)",
             marginBottom: "var(--space-4)",
           }}>
-            {ordinal(result.position)} / {result.totalRunners} — top {percentile}%
+            {ordinal(result.position)} out of {result.totalRunners}
           </div>
 
           <div style={{
@@ -718,12 +721,23 @@ export function ActiveRace() {
         </div>
       </div>
 
-      {/* Segment dots */}
-      <div class="active-race__segments">
+      {/* Trail map */}
+      <TrailMap
+        progress={activeRace.totalSegments > 0 ? activeRace.currentSegment / activeRace.totalSegments : 0}
+        terrain={raceData?.terrain ?? "flat_road"}
+        segments={activeRace.totalSegments}
+        currentSegment={activeRace.currentSegment}
+        aidStations={raceData?.segmentDefinitions
+          .map((sd, i) => (sd.hasAidStation ? i : -1))
+          .filter((i) => i >= 0)}
+      />
+
+      {/* Segment dots (secondary) */}
+      <div class="active-race__segments active-race__segments--small">
         {Array.from({ length: activeRace.totalSegments }).map((_, i) => (
           <div
             key={i}
-            class={`active-race__segment-dot ${
+            class={`active-race__segment-dot active-race__segment-dot--mini ${
               i < activeRace.currentSegment
                 ? "active-race__segment-dot--done"
                 : i === activeRace.currentSegment

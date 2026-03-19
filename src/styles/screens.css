@@ -315,6 +315,20 @@
   color: var(--color-terracotta);
 }
 
+/* ── TrailMap ─────────────────────────────────────────────────────── */
+
+.trail-map {
+  width: 100%;
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+  margin-bottom: var(--space-3);
+  position: relative;
+}
+
+.trail-map__runner {
+  transition: cx 0.3s ease, cy 0.3s ease;
+}
+
 /* ── ActiveWorkout ────────────────────────────────────────────────── */
 
 .active-workout {
@@ -377,6 +391,10 @@
   background: var(--color-warm-gray-200);
   border-radius: 8px;
   overflow: hidden;
+}
+
+.active-workout__effort-bar--small {
+  height: 8px;
 }
 
 .active-workout__effort-fill {
@@ -664,12 +682,22 @@
   margin-bottom: var(--space-4);
 }
 
+.active-race__segments--small {
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
 .active-race__segment-dot {
   width: 14px;
   height: 14px;
   border-radius: 50%;
   background: var(--color-warm-gray-200);
   transition: background 0.2s ease;
+}
+
+.active-race__segment-dot--mini {
+  width: 8px;
+  height: 8px;
 }
 
 .active-race__segment-dot--done {

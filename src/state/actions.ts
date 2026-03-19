@@ -783,10 +783,16 @@ function distanceKey(raceId: string): string {
 
 // Recovery fatigue by tier
 const POST_RACE_FATIGUE: Record<number, number> = {
-  1: 20,  // 5K
-  2: 30,  // 10K
-  3: 45,  // Half marathon
-  4: 70,  // Marathon
+  1: 20,   // 5K
+  2: 30,   // 10K
+  3: 45,   // Half marathon
+  4: 70,   // Marathon
+  5: 80,   // 50K
+  6: 85,   // 50 Mile
+  7: 90,   // 100K
+  8: 95,   // 100 Mile
+  9: 100,  // 200+ Mile
+  10: 100, // Barkley
 };
 
 // ── Race Completion ──────────────────────────────────────────────────
@@ -849,7 +855,7 @@ export function completeRaceAction(): RaceCompletionInfo | null {
 
   // Racing builds stats — significantly more than a single training session
   // Base XP per stat scales with tier (longer races = more gains)
-  const raceStatBase = [30, 60, 120, 200][tier - 1] ?? 30;
+  const raceStatBase = [30, 60, 120, 200, 300, 450, 600, 900, 1500, 2000][tier - 1] ?? 30;
   const isTrailRace = raceDef?.terrain === "rolling_hills" || raceDef?.terrain === "steep_climb";
   const placementBonus = positionPct <= 0.25 ? 1.5 : positionPct <= 0.5 ? 1.2 : 1.0;
 
@@ -859,7 +865,7 @@ export function completeRaceAction(): RaceCompletionInfo | null {
     mentalToughness: raceStatBase * 4,                               // races test your mind far more than training
     strength: Math.round(raceStatBase * (isTrailRace ? 2 : 1)),     // trail races build strength
     recovery: raceStatBase * 1,                                      // learning to recover mid-race
-    nutritionIQ: [20, 40, 80, 150][tier - 1] ?? 20,                 // fueling experience
+    nutritionIQ: [20, 40, 80, 150, 250, 400, 600, 1000, 1500, 2000][tier - 1] ?? 20,
   };
 
   const updatedStats = { ...state.stats };
@@ -909,8 +915,10 @@ export function completeRaceAction(): RaceCompletionInfo | null {
       firstUltraComplete: state.flags.firstUltraComplete || (raceDef ? raceDef.distance >= 31 : false),
       sponsoredRunTier: Math.max(
         state.flags.sponsoredRunTier,
-        raceDef && raceDef.distance >= 31 ? 2
-          : raceDef && raceDef.distance >= 26.2 ? 1
+        raceDef && raceDef.distance >= 100 ? 4  // 100 miler
+          : raceDef && raceDef.distance >= 50 ? 3  // 50 miler
+          : raceDef && raceDef.distance >= 31 ? 2  // 50K
+          : raceDef && raceDef.distance >= 26.2 ? 1  // marathon
           : state.flags.sponsoredRunTier,
       ),
       unlockedDistances: newUnlocks.length > 0
@@ -980,7 +988,7 @@ export function dnfRaceAction(reason: string): DNFCompletionInfo | null {
   const postRaceFatigue = Math.floor((POST_RACE_FATIGUE[tier] ?? 20) * 0.6);
 
   // DNF still builds stats — you learned something, just at 40% of a finish
-  const dnfStatBase = Math.round(([30, 60, 120, 200][tier - 1] ?? 30) * 0.4);
+  const dnfStatBase = Math.round(([30, 60, 120, 200, 300, 450, 600, 900, 1500, 2000][tier - 1] ?? 30) * 0.4);
   const dnfStatGains = {
     endurance: dnfStatBase * 2,
     mentalToughness: dnfStatBase * 5,  // DNFs teach mental toughness more than anything

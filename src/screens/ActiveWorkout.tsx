@@ -21,6 +21,7 @@ import { getEquippedBonuses, getConsumableTemplate } from "../systems/gear";
 import { getConsumableIcon, RunnerIcon } from "../components/Icons";
 import { RecoveryPanel } from "../components/RecoveryPanel";
 import { EquippedLoadout } from "../components/EquippedLoadout";
+import { TrailMap } from "../components/TrailMap";
 
 function formatMs(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
@@ -86,6 +87,25 @@ function streakMultiplier(streak: number): number {
   if (streak >= 10) return 2.0;
   if (streak >= 5) return 1.5;
   return 1.0;
+}
+
+function workoutTerrain(workoutType: string): string {
+  switch (workoutType) {
+    case "easy_run":
+      return "flat_road";
+    case "long_run":
+      return "flat_road";
+    case "intervals":
+      return "flat_road";
+    case "tempo_run":
+      return "rolling_hills";
+    case "hill_repeats":
+      return "steep_climb";
+    case "trail_run":
+      return "rolling_hills";
+    default:
+      return "default";
+  }
 }
 
 function workoutThemeBg(workoutType: string): string {
@@ -604,7 +624,6 @@ export function ActiveWorkout() {
 
   const elapsed = workout.elapsed;
   const duration = workout.duration;
-  const effortPct = duration > 0 ? Math.min(1, elapsed / duration) * 100 : 0;
   const feedback = qualityFeedback(cadence.quality);
   const isSweetSpot = cadence.quality === "sweet_spot";
   const sMult = streakMultiplier(streak);
@@ -646,30 +665,17 @@ export function ActiveWorkout() {
           </div>
         </div>
 
+        <TrailMap
+          progress={duration > 0 ? Math.min(1, elapsed / duration) : 0}
+          terrain={workoutTerrain(workout.workoutType)}
+        />
+
         <div class="active-workout__timer">
           {formatMs(elapsed)} / {formatMs(duration)}
         </div>
 
         <div class="active-workout__mileage">
           {currentMiles.toFixed(1)} / {baseMiles.toFixed(1)} mi
-        </div>
-
-        <div class="active-workout__meters">
-          <div class="active-workout__effort" style={{ flex: 1 }}>
-            <div style={{
-              fontSize: "var(--text-xs)",
-              color: "var(--color-text-muted)",
-              marginBottom: "var(--space-1)",
-            }}>
-              Progress
-            </div>
-            <div class="active-workout__effort-bar">
-              <div
-                class="active-workout__effort-fill"
-                style={{ width: `${effortPct}%`, backgroundColor: "#5dade2" }}
-              />
-            </div>
-          </div>
         </div>
 
         <div>
@@ -850,6 +856,11 @@ export function ActiveWorkout() {
         </div>
       </div>
 
+      <TrailMap
+        progress={duration > 0 ? Math.min(1, elapsed / duration) : 0}
+        terrain={workoutTerrain(workout.workoutType)}
+      />
+
       <div class="active-workout__timer">
         {formatMs(elapsed)} / {formatMs(duration)}
       </div>
@@ -859,26 +870,6 @@ export function ActiveWorkout() {
       </div>
       <div class="active-workout__career-miles">
         Total: {totalCareerMiles.toFixed(1)} mi
-      </div>
-
-      <div class="active-workout__meters">
-        <div class="active-workout__effort" style={{ flex: 1 }}>
-          <div
-            style={{
-              fontSize: "var(--text-xs)",
-              color: "var(--color-text-muted)",
-              marginBottom: "var(--space-1)",
-            }}
-          >
-            Progress
-          </div>
-          <div class="active-workout__effort-bar">
-            <div
-              class="active-workout__effort-fill"
-              style={{ width: `${effortPct}%` }}
-            />
-          </div>
-        </div>
       </div>
 
       <div
